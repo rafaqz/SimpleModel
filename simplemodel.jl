@@ -7,18 +7,17 @@ using Random
 using StatsBase
 using GLMakie
 using Statistics
+using DataFrames
 
-datadir = "/Users/cvg147/Library/CloudStorage/Dropbox/Arbejde/Data"
+datadir = "/home/raf/Data/Biodiversity/Distributions/"
 
 # download the bioclim variables for south america
 
-ENV["RASTERDATASOURCES_PATH"] = joinpath(datadir, "Rasterdatasources")
 bioclim = RasterStack(CHELSA{BioClim}; lazy=true)
 bioclim_sa = bioclim[X=-89 .. -33, Y=-57 .. 13]
 bioclim_sa = aggregate(mean, replace_missing(bioclim_sa, NaN), 10)
 sa_mask = boolmask(bioclim_sa.bio15)
 Plots.plot(bioclim_sa.bio1)
-
 
 # Fit a PCA model to the climate and extract the two primary components
 
@@ -29,7 +28,7 @@ end)
 # histogram(big_mat'; bins=20, ticks=false, label=false, title=(1:19)')
 
 model = fit(PCA, big_mat; maxoutdim=2)
-pred = transform(model, big_mat)
+pred = MultivariateStats.transform(model, big_mat)
 pca1 = pred[1, :]
 pca2 = pred[2, :]
 
@@ -56,7 +55,6 @@ using Shapefile, GeoInterface, Extents#, ProgressMeter
 const GI = GeoInterface
 using GeometryOps
 
-
 shapefiles = [
     joinpath(datadir, "Birds/batch_1.shp"),
     joinpath(datadir, "Birds/batch_2.shp"),
@@ -66,12 +64,19 @@ shapefiles = [
 ]
 
 sa_geoms = reduce(vcat, map(shapefiles) do sf
+    @show sf
     df = DataFrame(Shapefile.Table(sf))
     filter(df) do row
         ext = GI.calc_extent(GI.trait(row.geometry), row.geometry)
         Extents.intersects(ext, Extents.extent(bioclim_sa))
     end
 end)
+
+# Count total diversity
+diversity = rasterize(count, sa_geoms; to=sa_mask, boundary=:touches)
+diversity .*= sa_mask
+Plots.plot(diversity)
+Plots.plot(diversity; clims=(400, 650))
 
 # a function to rasterize a species by name
 
