@@ -78,6 +78,13 @@ diversity .*= sa_mask
 Plots.plot(diversity)
 Plots.plot(diversity; clims=(400, 650))
 
+
+# Plot the diversity in climate space
+f = Figure()
+a,s = Makie.scatter(f[1,1], collect(zip(pca1, pca2)); markersize = 0.1, color = diversity[sa_mask], colormap = cgrad(:Spectral, rev = true))
+Colorbar(f[1,2],s)
+f
+
 # a function to rasterize a species by name
 
 function get_speciesmask(name; geoms = sa_geoms, mask = sa_mask)
@@ -188,7 +195,7 @@ background = fit(Histogram, (pca1, pca2),  (-10:0.3:10, -10:0.3:10))
 spec = rand(allspecies)
 x,y = get_climate(get_speciesmask(spec))
 sp = fit(Histogram, (x,y),  (-10:0.3:10, -10:0.3:10))
-Plots.plot(Plots.plot(sp, aspect_ratio = 1), Plots.plot(hh, aspect_ratio = 1), layout = 2)
+Plots.plot(Plots.plot(sp, aspect_ratio = 1), Plots.plot(background, aspect_ratio = 1), layout = 2)
 rel = sp.weights ./ background.weights
 replace!(rel, 0 => NaN)
 Plots.heatmap(rel')
