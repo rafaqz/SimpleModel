@@ -212,3 +212,10 @@ GeoInterface.convert(GeometryBasics, simplified)
 rast = rasterize(count, sa_geoms; to=sa_mask, threaded=false)
 Plots.plot(rast)
 
+# check if the point `(xp, yp)`` is in an ellipse centered on (`x`,`y`) 
+# with angle `an` (in radians), x axis radius `ax_x` and y axis radius `ax_x`
+function in_ellipse((xp,yp), an, x, y, ax_x, ax_y)
+    a = (cos(an) * (xp-x) + sin(an)*(yp-y))^2 / ax_x^2
+    b = (sin(an) * (xp-x) + cos(an)*(yp-y))^2 / ax_y^2
+    a+b < 1
+end
