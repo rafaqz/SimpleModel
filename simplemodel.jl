@@ -247,7 +247,7 @@ in_ellipse(point, el::Ellipse) = distance(point, el) <= 1
 randlims(lims) = (last(lims)-first(lims))*rand()+first(lims)
 
 import Random.rand
-rand(::Type{Ellipse}, xlims, ylims, lengthlims, widthlims) = Ellipse(randlims(xlims), randlims(ylims), randlims(lengthlims), randlims(widthlims), rand()π)
+rand(::Type{Ellipse}; xlims = (0,1), ylims = (0,1), lengthlims = (0.01,1), widthlims = (0.01,1)) = Ellipse(randlims(xlims), randlims(ylims), randlims(lengthlims), randlims(widthlims), rand()π)
 
 # Test the ellipse code
 using Plots
@@ -256,3 +256,10 @@ el = rand(Ellipse, (1,1000), (1, 1000), (1,400), (1,400))
 scatter(pts, aspect_ratio = 1, marker_z = [in_ellipse(x, el) for x in pts], msw = 0, ms = 1)
 
 
+
+
+el = rand(Ellipse, xlims = (-5,10), ylims = (-5,5), lengthlims = 1.5, widthlims = 1.5)
+els = [in_ellipse(pt, el) for pt in zip(pca1, pca2)]
+f = Makie.scatter(collect(zip(pca1, pca2)); markersize = 0.1, color = :grey)
+Makie.scatter!(collect(zip(pca1, pca2))[els]; markersize = 0.1, color = :red)
+f
