@@ -9,13 +9,24 @@ using GLMakie
 using Statistics
 using DataFrames
 
-datadir = "/home/raf/Data/Biodiversity/Distributions/"
+
+struct Ellipse
+    center_x::Float64
+    center_y::Float64
+    length::Float64
+    width::Float64
+    angle::Float64 # Given in radians
+end
+
+
+datadir = "/Users/cvg147/Library/CloudStorage/Dropbox/Arbejde/Data"
+ENV["RASTERDATASOURCES_PATH"] = joinpath(datadir, "Rasterdatasources")
 
 # download the bioclim variables for south america
 
 bioclim = RasterStack(CHELSA{BioClim}; lazy=true)
 bioclim_sa = bioclim[X=-89 .. -33, Y=-57 .. 13]
-bioclim_sa = aggregate(mean, replace_missing(bioclim_sa, NaN), 10)
+bioclim_sa = Rasters.aggregate(mean, replace_missing(bioclim_sa, NaN), 10)
 sa_mask = boolmask(bioclim_sa.bio15)
 Plots.plot(bioclim_sa.bio1)
 
