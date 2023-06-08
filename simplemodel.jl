@@ -213,9 +213,42 @@ rast = rasterize(count, sa_geoms; to=sa_mask, threaded=false)
 Plots.plot(rast)
 
 # check if the point `(xp, yp)`` is in an ellipse centered on (`x`,`y`) 
-# with angle `an` (in radians), x axis radius `ax_x` and y axis radius `ax_x`
-function in_ellipse((xp,yp), an, x, y, ax_x, ax_y)
-    a = (cos(an) * (xp-x) + sin(an)*(yp-y))^2 / ax_x^2
-    b = (sin(an) * (xp-x) + cos(an)*(yp-y))^2 / ax_y^2
+# with angle `an` (in radians), width `a` and height `b`
+function in_ellipse((xp,yp), an, x, y, a, b)
+    a = (cos(an) * (xp-x) + sin(an)*(yp-y))^2 / a^2
+    b = (sin(an) * (xp-x) + cos(an)*(yp-y))^2 / b^2
     a+b < 1
 end
+
+struct Ellipse
+    center_x::Float64
+    center_y::Float64
+    length::Float64
+    width::Float64
+    angle::Float64 # Given in radians
+end
+
+function distance(point::Tuple, el::Ellipse)
+    cosa = cos(el.angle)
+    sina = sin(el.angle)
+    rel_x = first(point) - el.center_x
+    rel_y = last(point) - el.center_y
+    a = (cosa * rel_x + sina * rel_y)^2 / el.length^2
+    b = (sina * rel_x + cosa * rel_y)^2 / el.width^2
+    a+b
+end
+
+in_ellipse(point, el::Ellipse) = distance(point, el) <= 1
+
+randlims(lims) = (last(lims)-first(lims))*rand()+first(lims)
+
+import Random.rand
+rand(::Type{Ellipse}, xlims, ylims, lengthlims, widthlims) = Ellipse(randlims(xlims), randlims(ylims), randlims(lengthlims), randlims(widthlims), rand()π)
+
+# Test the ellipse code
+using Plots
+pts = vec(collect(Iterators.product(1:5:1000, 1:5:1000)))
+el = rand(Ellipse, (1,1000), (1, 1000), (1,400), (1,400))
+scatter(pts, aspect_ratio = 1, marker_z = [in_ellipse(x, el) for x in pts], msw = 0, ms = 1)
+
+
