@@ -217,11 +217,11 @@ Plots.heatmap(rel')
 
 
 # not really necessary
-using GeometryBasics
-simplified = GeometryOps.simplify(sa_geoms[1:100]; tol=0.0000001);
-GeoInterface.convert(GeometryBasics, simplified)
-rast = rasterize(count, sa_geoms; to=sa_mask, threaded=false)
-Plots.plot(rast)
+#using GeometryBasics
+#simplified = GeometryOps.simplify(sa_geoms[1:100]; tol=0.0000001);
+#GeoInterface.convert(GeometryBasics, simplified)
+#rast = rasterize(count, sa_geoms; to=sa_mask, threaded=false)
+#Plots.plot(rast)
 
 # check if the point `(xp, yp)`` is in an ellipse centered on (`x`,`y`) 
 # with angle `an` (in radians), width `a` and height `b`
