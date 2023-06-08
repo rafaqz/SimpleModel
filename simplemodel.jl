@@ -75,7 +75,6 @@ shapefiles = [
 ]
 
 sa_geoms = reduce(vcat, map(shapefiles) do sf
-    @show sf
     df = DataFrame(Shapefile.Table(sf))
     filter(df) do row
         ext = GI.calc_extent(GI.trait(row.geometry), row.geometry)
@@ -263,3 +262,5 @@ els = [in_ellipse(pt, el) for pt in zip(pca1, pca2)]
 f = Makie.scatter(collect(zip(pca1, pca2)); markersize = 0.1, color = :grey)
 Makie.scatter!(collect(zip(pca1, pca2))[els]; markersize = 0.1, color = :red)
 f
+
+using DynamicGrids
