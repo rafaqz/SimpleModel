@@ -231,13 +231,6 @@ function in_ellipse((xp,yp), an, x, y, a, b)
     a+b < 1
 end
 
-struct Ellipse
-    center_x::Float64
-    center_y::Float64
-    length::Float64
-    width::Float64
-    angle::Float64 # Given in radians
-end
 
 function distance(point::Tuple, el::Ellipse)
     cosa = cos(el.angle)
