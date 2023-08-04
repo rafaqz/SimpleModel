@@ -8,7 +8,9 @@ using StatsBase
 using GLMakie
 using Statistics
 using DataFrames
-
+using ArchGDAL
+using GeoInterfaceMakie
+using GeoInterfaceRecipes
 
 struct Ellipse
     center_x::Float64
@@ -18,15 +20,20 @@ struct Ellipse
     angle::Float64 # Given in radians
 end
 
-
-datadir = "/Users/cvg147/Library/CloudStorage/Dropbox/Arbejde/Data"
-ENV["RASTERDATASOURCES_PATH"] = joinpath(datadir, "Rasterdatasources")
+# datadir = "/Users/cvg147/Library/CloudStorage/Dropbox/Arbejde/Data"
+# ENV["RASTERDATASOURCES_PATH"] = joinpath(datadir, "Rasterdatasources")
+datadir = "/home/raf/Data/Biodiversity/Distributions"
 
 # download the bioclim variables for south america
 
-bioclim = RasterStack(CHELSA{BioClim}; lazy=true)
+# bioclim = RasterStack(CHELSA{BioClim}; lazy=true)
+# bioclim_sa = bioclim[X=-89 .. -33, Y=-57 .. 13]
+# bioclim_sa = Rasters.aggregate(mean, replace_missing(bioclim_sa, NaN), 10)
+
+# Use WorldClim for now for speed
+bioclim = RasterStack(WorldClim{BioClim}; lazy=true)
 bioclim_sa = bioclim[X=-89 .. -33, Y=-57 .. 13]
-bioclim_sa = Rasters.aggregate(mean, replace_missing(bioclim_sa, NaN), 10)
+# bioclim_sa = Rasters.aggregate(mean, replace_missing(bioclim_sa, NaN), 10)
 sa_mask = boolmask(bioclim_sa.bio15)
 Plots.plot(bioclim_sa.bio1)
 
@@ -54,11 +61,12 @@ p
 
 # create maps to visualize the PCAs
 
-map1 = fill(NaN, dims(bioclim_sa))
-map2 = fill(NaN, dims(bioclim_sa))
+map1 = fill(NaN, dims(bioclim_sa); missingval=NaN)
+map2 = fill(NaN, dims(bioclim_sa); missingval=NaN)
 map1[sa_mask] .= pca1
 map2[sa_mask] .= pca2
-Plots.plot(RasterStack(map1, map2))
+pcas = RasterStack((pca1=map1, pca2=map2))
+Plots.plot(pcas)
 
 # Load the bird shapefiles and pick the ones in South America
 
@@ -91,9 +99,9 @@ Plots.plot(diversity; clims=(400, 650))
 
 # Plot the diversity in climate space
 f = Figure()
-a,s = Makie.scatter(f[1,1], collect(zip(pca1, pca2)); markersize = 0.1, color = diversity[sa_mask], colormap = cgrad(:Spectral, rev = true))
+a, s = Makie.scatter(f[1,1], collect(zip(pca1, pca2)); markersize = 0.1, color = diversity[sa_mask], colormap = cgrad(:Spectral, rev = true))
 Colorbar(f[1,2],s)
-f
+display(f)
 
 # a function to rasterize a species by name
 
@@ -112,7 +120,7 @@ function plot_species(speciesnames)
     a = Axis(f[1,1], aspect = DataAspect())
     b = Axis(f[1,2], aspect = DataAspect())
     Makie.plot!(a, sa_mask, colormap = "Greys")
-    Makie.scatter!(b,collect(zip(pca1, pca2)); markersize = 0.1, color=(:grey, 0.5))
+    Makie.scatter!(b, collect(zip(pca1, pca2)); markersize = 0.1, color=(:grey, 0.5))
     colsize!(f.layout, 1, Auto(0.73))
     rich = fill(NaN, dims(sa_mask))
 
@@ -160,8 +168,6 @@ p
 
 
 
-
-
 # Get the geographical centroid of a species
 function geocentroids(name)
     a = get_speciesmask(name)
@@ -191,7 +197,8 @@ rangequants = asquantile(ranges, 4)
 # and plot them
 
 f = Figure()
-axs = [Axis(f[1,1], aspect = DataAspect()), Axis(f[2,1], aspect = DataAspect()), Axis(f[1,2], aspect = DataAspect()), Axis(f[2,2], aspect = DataAspect())]
+aspect = DataAspect()
+axs = [Axis(f[1,1]; aspect), Axis(f[2,1]; aspect), Axis(f[1,2]; aspect), Axis(f[2,2]; aspect)]
 for i in 1:4
     inds = findall(==(i), rangequants)
     Makie.plot!(axs[i], sa_mask, colormap = :Greys)
@@ -213,8 +220,6 @@ Plots.heatmap(rel')
 
 
 
-
-
 # not really necessary
 #using GeometryBasics
 #simplified = GeometryOps.simplify(sa_geoms[1:100]; tol=0.0000001);
@@ -229,7 +234,6 @@ function in_ellipse((xp,yp), an, x, y, a, b)
     b = (sin(an) * (xp-x) + cos(an)*(yp-y))^2 / b^2
     a+b < 1
 end
-
 
 function distance(point::Tuple, el::Ellipse)
     cosa = cos(el.angle)
@@ -246,21 +250,44 @@ in_ellipse(point, el::Ellipse) = distance(point, el) <= 1
 randlims(lims) = (last(lims)-first(lims))*rand()+first(lims)
 
 import Random.rand
-rand(::Type{Ellipse}; xlims = (0,1), ylims = (0,1), lengthlims = (0.01,1), widthlims = (0.01,1)) = Ellipse(randlims(xlims), randlims(ylims), randlims(lengthlims), randlims(widthlims), rand()π)
+function Random.rand(::Type{Ellipse}; 
+    xlims=(0,1), ylims=(0,1), lengthlims=(0.01,1), widthlims=(0.01,1)
+) 
+    Ellipse(randlims(xlims), randlims(ylims), randlims(lengthlims), randlims(widthlims), rand()π)
+end
 
 # Test the ellipse code
 using Plots
 pts = vec(collect(Iterators.product(1:5:1000, 1:5:1000)))
-el = rand(Ellipse, (1,1000), (1, 1000), (1,400), (1,400))
-scatter(pts, aspect_ratio = 1, marker_z = [in_ellipse(x, el) for x in pts], msw = 0, ms = 1)
+el = rand(Ellipse; xlims=(1, 1000), ylims=(1, 1000), lengthlims=(1,400), widthlims=(1,400))
+Plots.scatter(pts; aspect_ratio = 1, marker_z = [in_ellipse(x, el) for x in pts], msw = 0, ms = 1)
 
+el = rand(Ellipse; xlims = (-5,10), ylims = (-5,5), lengthlims = 1.5, widthlims = 1.5)
+els = [in_ellipse(pt, el) for pt in zip(pcas.pca1, pcas.pca2)]
+h = Makie.scatter(collect(zip(pca1, pca2)); markersize = 0.1, color = :grey)
+collect(zip(pcas.pca1, pcas.pca2))[els]
+Makie.scatter!(collect(zip(pcas.pca1, pcas.pca2))[els]; markersize = 0.1, color = :red)
 
+# Project niche pca elipses back to real space as masks
+Rasters.rplot(els)
 
+# Polygonize the masks
+# This needs the improve_polygonize branch of GeometryOps
+using GeometryOps, GeometryBasics, GLMakie, GeoInterface
+# This is still buggy...
+centers = map(lookup(els)) do lookup
+    parent(Rasters.shiftlocus(Rasters.Center(), lookup))
+end
+@time polygons = GeometryOps.polygonize(centers..., els);
+Rasters.rplot(els)
+# Slightly buggy still, some holes are missed 
+Makie.poly!(polygons)
 
-el = rand(Ellipse, xlims = (-5,10), ylims = (-5,5), lengthlims = 1.5, widthlims = 1.5)
-els = [in_ellipse(pt, el) for pt in zip(pca1, pca2)]
-f = Makie.scatter(collect(zip(pca1, pca2)); markersize = 0.1, color = :grey)
-Makie.scatter!(collect(zip(pca1, pca2))[els]; markersize = 0.1, color = :red)
-f
+# Check the polygon areas - potential range sizes
+areas = map(polygons) do polygon
+    res = map(abs ∘ step, centers)
+    count(boolmask(polygon; res)) * prod(res) 
+end |> sort
+# Sort the areas 
 
-using DynamicGrids
+# Now rasterise these into the PCAs? 
