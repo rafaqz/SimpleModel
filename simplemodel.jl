@@ -271,23 +271,57 @@ Makie.scatter!(collect(zip(pcas.pca1, pcas.pca2))[els]; markersize = 0.1, color 
 # Project niche pca elipses back to real space as masks
 Rasters.rplot(els)
 
+# els = bioclim_sa.bio1 .> 25
 # Polygonize the masks
 # This needs the improve_polygonize branch of GeometryOps
-using GeometryOps, GeometryBasics, GLMakie, GeoInterface
-# This is still buggy...
+using GeometryOps, GeometryBasics, GLMakie, GeoInterface, LibGEOS, Stencils
 centers = map(lookup(els)) do lookup
     parent(Rasters.shiftlocus(Rasters.Center(), lookup))
 end
-@time polygons = GeometryOps.polygonize(centers..., els);
+polygons = GeometryOps.polygonize(centers..., els)
 Rasters.rplot(els)
-# Slightly buggy still, some holes are missed 
 Makie.poly!(polygons)
 
+for p in polygons
+    Makie.poly!(p)
+end
+
 # Check the polygon areas - potential range sizes
-areas = map(polygons) do polygon
-    res = map(abs ∘ step, centers)
-    count(boolmask(polygon; res)) * prod(res) 
-end |> sort
-# Sort the areas 
+res = map(abs ∘ step, centers)
+min_viable_area = 20 # Maybe this is really small?
+too_small_removed = filter(polygons) do polygon
+    count(boolmask(polygon; res)) > min_pixels
+end 
+Rasters.rplot(els)
+Makie.poly!(too_small_removed)
+
+# Join areas withing some allowed dispersal radius
+dilate(a) = Stencils.mapstencil(Stencils.Circle{4}(), a) do hood
+    any(hood)
+end
+dilated_polygons = GeometryOps.polygonize(centers..., dilate(els))
+Rasters.rplot(els)
+Makie.poly!(dilated_polygons)
+
+multi_polygons = GI.MultiPolygon.(map(dilated_polygons) do dp
+    filter(polygons) do p
+        LibGEOS.within(p, dp)
+    end 
+end |> filter(x -> length(x) > 0));
+
+# Plot habitat groups that may be the same species
+Makie.poly(dilated_polygons)
+for mp in multi_polygons
+    Makie.poly!(mp)
+end
+
+p = Rasters.rplot(pcas.pca1; transparency=true)
+Makie.poly!.(p.axis, multi_polygons)
+Makie.save("species.png", p)
+p = Makie.scatter( collect(zip(pca1, pca2)); markersize = 0.1, color = :grey)
+collect(zip(pcas.pca1, pcas.pca2))[els]
+Makie.scatter!(collect(zip(pcas.pca1, pcas.pca2))[els]; markersize = 0.1, color = :red)
+Makie.save("pca.png", p)
+
 
 # Now rasterise these into the PCAs? 
