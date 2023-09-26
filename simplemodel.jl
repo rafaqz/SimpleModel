@@ -1,5 +1,7 @@
-using Rasters, RasterDataSources
-using Stencils
+
+# Load a shitload of packages
+using Rasters
+using RasterDataSources
 using MultivariateStats
 using Distributions
 using Plots
@@ -11,7 +13,15 @@ using DataFrames
 using ArchGDAL
 using GeoInterfaceMakie
 using GeoInterfaceRecipes
+using GeometryOps
+using GeometryBasics
+using GeoInterface
+using LibGEOS
+using Stencils
+using Extents
+using Shapefile
 
+# A basic Ellipse struct
 struct Ellipse
     center_x::Float64
     center_y::Float64
@@ -70,9 +80,7 @@ Plots.plot(pcas)
 
 # Load the bird shapefiles and pick the ones in South America
 
-using Shapefile, GeoInterface, Extents#, ProgressMeter
 const GI = GeoInterface
-using GeometryOps
 
 shapefiles = [
     joinpath(datadir, "Birds/batch_1.shp"),
@@ -274,7 +282,6 @@ Rasters.rplot(els)
 # els = bioclim_sa.bio1 .> 25
 # Polygonize the masks
 # This needs the improve_polygonize branch of GeometryOps
-using GeometryOps, GeometryBasics, GLMakie, GeoInterface, LibGEOS, Stencils
 centers = map(lookup(els)) do lookup
     parent(Rasters.shiftlocus(Rasters.Center(), lookup))
 end
