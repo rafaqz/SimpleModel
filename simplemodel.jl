@@ -30,9 +30,10 @@ struct Ellipse
     angle::Float64 # Given in radians
 end
 
-# datadir = "/Users/cvg147/Library/CloudStorage/Dropbox/Arbejde/Data"
-# ENV["RASTERDATASOURCES_PATH"] = joinpath(datadir, "Rasterdatasources")
-datadir = "/home/raf/Data/Biodiversity/Distributions"
+# Let's load the environment data
+datadir = "/Users/cvg147/Library/CloudStorage/Dropbox/Arbejde/Data"
+ENV["RASTERDATASOURCES_PATH"] = joinpath(datadir, "Rasterdatasources")
+# datadir = "/home/raf/Data/Biodiversity/Distributions"
 
 # download the bioclim variables for south america
 
@@ -69,7 +70,7 @@ for i in 1:19
 end
 p
 
-# create maps to visualize the PCAs
+# create maps to visualize the PCAs. These are kept in the analysis going forward
 
 map1 = fill(NaN, dims(bioclim_sa); missingval=NaN)
 map2 = fill(NaN, dims(bioclim_sa); missingval=NaN)
@@ -90,6 +91,7 @@ shapefiles = [
     joinpath(datadir, "Birds/batch_5.shp"),
 ]
 
+# sorry, this takes time
 sa_geoms = reduce(vcat, map(shapefiles) do sf
     df = DataFrame(Shapefile.Table(sf))
     filter(df) do row
@@ -112,17 +114,24 @@ Colorbar(f[1,2],s)
 display(f)
 
 # a function to rasterize a species by name
-
 function get_speciesmask(name; geoms = sa_geoms, mask = sa_mask)
-    reduce(.|, map(findall(==(name), geoms.sci_name)) do i
+    ret = reduce(.|, map(findall(==(name), geoms.sci_name)) do i
         boolmask(geoms.geometry[i]; to = mask, boundary = :touches) .& mask
     end)
+    rebuild(ret; name = name)
 end
 
 # Some testing plots
-allspecies = unique(sa_geoms.sci_name)
-Plots.plot(get_speciesmask(rand(allspecies)))
 
+# names of all species
+allspecies = unique(sa_geoms.sci_name)
+
+# This plots the distribution of a random species on the map
+Plots.plot(bioclim_sa.bio1, fill = :grey)
+Plots.plot!(get_speciesmask(rand(allspecies)))
+
+# Creates two side-by-side plots, one in geographic space, the other in climate space
+# Shows the occurrence points of all the species defined by speciesnames
 function plot_species(speciesnames)
     f = Figure(resolution = (1500, 700))
     a = Axis(f[1,1], aspect = DataAspect())
