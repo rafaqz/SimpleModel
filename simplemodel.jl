@@ -167,13 +167,37 @@ end
 allcentroids = get_centroid.(get_speciesmask.(allspecies))
 ranges = count.(get_speciesmask.(allspecies))
 
+# This figure shows the geographic range size of ranges on the environmental centroids (in environment spaecs)
 p = Figure()
 a = Axis(p[1,1], aspect = DataAspect())
 Makie.scatter!(a, collect(zip(pca1, pca2)); markersize = 0.1, color=(:grey, 0.5))
-Makie.scatter!(a, allcentroids; markersize = 0.2, color = ranges, label = "rangesizes")
+Makie.scatter!(a, allcentroids; markersize = 0.6, color = ranges, label = "rangesizes")
 Makie.Colorbar(p[1,2])
 p
 
+
+# These functions create convex hulls in environmental space and calculate their area
+function get_climatepoints(species)
+    smask = get_speciesmask(species)
+    xs, ys = get_climate(smask)
+    length(xs) < 1 && return GI.MultiPoint([(0,0)])
+    GI.MultiPoint(collect(zip(xs, ys)))
+end
+
+gethull(species) = convexhull(get_climatepoints(species))
+hullarea(species) = LibGEOS.area(gethull(species))
+
+# get hull area for all species
+allhulls = hullarea.(allspecies)
+
+# show the mean size of the climatic range in environmeltal space
+# TODO: make this function general
+p = Figure()
+a = Axis(p[1,1], aspect = DataAspect())
+Makie.scatter!(a, collect(zip(pca1, pca2)); markersize = 0.3, color=(:grey, 0.5))
+Makie.scatter!(a, allcentroids; markersize = 4, color = allhulls, label = "rangesizes", colormap = Reverse(:Spectral))
+Makie.Colorbar(p[1,2], colormap = Reverse(:Spectral))
+p
 
 
 # Get the geographical centroid of a species
