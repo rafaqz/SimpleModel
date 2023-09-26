@@ -104,7 +104,6 @@ end)
 diversity = rasterize(count, sa_geoms; to=sa_mask, boundary=:touches)
 diversity .*= sa_mask
 Plots.plot(diversity)
-Plots.plot(diversity; clims=(400, 650))
 
 
 # Plot the diversity in climate space
@@ -151,16 +150,17 @@ function plot_species(speciesnames)
     end
 
     Makie.plot!(a, rich, colormap=(:tab10, 0.5), colorrange=(1, 10))
-    leg = Makie.Legend(f[1,3], b, framevisible = false)
-    for i in 1:length(speciesnames)
-        leg.entrygroups[][1][2][i].elements[1].markersize = 20
-    end
+  #  leg = Makie.Legend(f[1,3], a, framevisible = false, colorrange = (1,10)) # TODO: there was a problem with the legend code
+   # for i in 1:length(speciesnames)
+    #    leg.entrygroups[][1][2][i].elements[1].markersize = 20
+   # end
     f
 end
 
 # plot some random species and look at their distribution
 specs = rand(allspecies, 5)
 plot_species(specs)
+
 
 function get_climate(speciesmask; pcas = (map1, map2))
     filter(isfinite, map1[speciesmask]), filter(isfinite, map2[speciesmask])
@@ -243,7 +243,7 @@ axs = [Axis(f[1,1]; aspect), Axis(f[2,1]; aspect), Axis(f[1,2]; aspect), Axis(f[
 for i in 1:4
     inds = findall(==(i), rangequants)
     Makie.plot!(axs[i], sa_mask, colormap = :Greys)
-    Makie.scatter!(axs[i], gc[inds], markersize = 0.9)
+    Makie.scatter!(axs[i], gc[inds], markersize = 2)
 end
 f
 
