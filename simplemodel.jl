@@ -288,14 +288,17 @@ end
 
 in_ellipse(point, el::Ellipse) = distance(point, el) <= 1
 
-randlims(lims) = (last(lims)-first(lims))*rand()+first(lims)
+rescale(x, min_x, max_x) = (max_x - min_x)*x + min_x
 
 import Random.rand
 function Random.rand(::Type{Ellipse}; 
-    xlims=(0,1), ylims=(0,1), lengthlims=(0.01,1), widthlims=(0.01,1)
-) 
-    Ellipse(randlims(xlims), randlims(ylims), randlims(lengthlims), randlims(widthlims), rand()π)
+    xlims=(0,1), ylims=(0,1), area = 1) 
+    a = rand() * sqrt(pi)
+    b = 1 / (pi * a)
+    Ellipse(rescale(rand(), xlims...), rescale(rand(), ylims...), a * sqrt(area), b * sqrt(area), rand()π)
 end
+
+
 
 # Test the ellipse code
 using Plots
