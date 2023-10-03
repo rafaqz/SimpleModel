@@ -21,6 +21,13 @@ using Stencils
 using Extents
 using Shapefile
 
+# Create a raster map from a vector of observations in the right order
+function do_map(pca, sa_mask)
+    map = fill(NaN, dims(sa_mask); missingval=NaN)
+    map[sa_mask] .= pca
+    map
+end
+
 # a function to rasterize a species by name
 function get_speciesmask(name; geoms = sa_geoms, mask = sa_mask)
     ret = reduce(.|, map(findall(==(name), geoms.sci_name)) do i
@@ -29,11 +36,11 @@ function get_speciesmask(name; geoms = sa_geoms, mask = sa_mask)
     rebuild(ret; name = name)
 end
 
-function get_climate(speciesmask; pcas = pca_maps)
+function get_climate(speciesmask::Raster; pcas = pca_maps)
     filter(isfinite, first(pcas)[speciesmask]), filter(isfinite, last(pcas)[speciesmask])
 end
 
-get_climate(species; pcas = pca_maps) = get_climate(get_speciesmask(species); pcas)
+get_climate(species::String; pcas = pca_maps) = get_climate(get_speciesmask(species); pcas)
 
 function points_to_geo(xs, ys)
     length(xs) < 1 && return GI.MultiPoint([(0,0)])
@@ -41,13 +48,13 @@ function points_to_geo(xs, ys)
 end
 
 # find the centroid in climate space of a species
-function get_centroid(speciesmask; pcas = (map1, map2))
+function get_centroid(speciesmask; pcas = pca_maps)
     x, y = get_climate(speciesmask; pcas)
     mean(x), mean(y)
 end
 
 # These functions create convex hulls in environmental space and calculate their area
-gethull(species) = convexhull(points_to_geo(get_climatepoints(species)...))
+gethull(species) = convexhull(points_to_geo(get_climate(species)...))
 hullarea(species) = LibGEOS.area(gethull(species))
 
 # Get the geographical centroid of a species

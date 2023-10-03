@@ -11,8 +11,7 @@ using Shapefile
 
 # Let's load the environment data
 
-function prepare_environment()
-    datadir = "/Users/cvg147/Library/CloudStorage/Dropbox/Arbejde/Data"
+function prepare_environment(datadir)
     ENV["RASTERDATASOURCES_PATH"] = joinpath(datadir, "Rasterdatasources")
     # datadir = "/home/raf/Data/Biodiversity/Distributions"
 
@@ -42,19 +41,11 @@ function do_pca(bioclim_sa, sa_mask)
     pred[1, :], pred[2, :], model
 end
 
-# Create a raster map from a vector of observations in the right order
-function do_map(pca, sa_mask)
-    map = fill(NaN, dims(sa_mask); missingval=NaN)
-    map1[sa_mask] .= pca
-    map
-end
-
-
 # Load the bird shapefiles and pick the ones in South America
 
 const GI = GeoInterface
 
-function loadranges(data::String, batches::Int, mask)
+function loadranges(data::String, batches::Int, mask, datadir)
     shapefiles = [joinpath(datadir, data, "batch_$i.shp") for i in 1:batches]
     reduce(vcat, map(shapefiles) do sf
         df = DataFrame(Shapefile.Table(sf))

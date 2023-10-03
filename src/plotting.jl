@@ -24,7 +24,7 @@ end
 
 # Creates two side-by-side plots, one in geographic space, the other in climate space
 # Shows the occurrence points of all the species defined by speciesnames
-function plot_species(speciesnames, mask = sa_mask, pca1, pca2, pca_maps)
+function plot_species(speciesnames; mask = sa_mask, pca1 = pca1, pca2 = pca2, pca_maps = pca_maps)
     f = Figure(resolution = (1500, 700))
     a = Axis(f[1,1], aspect = DataAspect())
     b = Axis(f[1,2], aspect = DataAspect())
@@ -62,11 +62,11 @@ function overplot_pca_space(points, color; pca1=pca1, pca2=pca2)
 end
 
 # Overplot some points on the map of south america
-function overplot_geo_space(points, color; mask = sa_mask)
+function overplot_geo_space(points, col; mask = sa_mask)
     f = Figure()
     a = Axis(f[1,1], aspect = DataAspect())
     Makie.plot!(a, mask, colormap = :Greys)
-    Makie.scatter!(points, color = color)
+    Makie.scatter!(points, color = col)
     f
 end
 

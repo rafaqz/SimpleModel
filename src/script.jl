@@ -10,7 +10,7 @@ include("simplemodel.jl")
 ###--- First we load all the data
 
 ## Get the environmental data
-bioclim_sa = prepare_environment()
+bioclim_sa = prepare_environment("/Users/cvg147/Library/CloudStorage/Dropbox/Arbejde/Data")
 sa_mask = boolmask(bioclim_sa.bio15)
 
 # and visualize
@@ -24,10 +24,10 @@ pca_maps = RasterStack((pca1=do_map(pca1, sa_mask), pca2=do_map(pca2, sa_mask)))
 
 # and visualize
 Plots.plot(pca_maps)
-biplot(pca1, pca2, model, string(names(bioclim_sa)))
+biplot(pca1, pca2, model, string.(names(bioclim_sa)))
 
 # Get the bird data (this takes time)
-sa_geoms = loadranges("Birds", 5, sa_mask)
+sa_geoms = loadranges("Birds", 5, sa_mask, "/Users/cvg147/Library/CloudStorage/Dropbox/Arbejde/Data")
 # names of all species
 allspecies = unique(sa_geoms.sci_name)
 
@@ -90,7 +90,7 @@ overplot_pca_space(allcentroids, allhulls)
 gc = geocentroids.(allspecies)
 
 # plot the location of all the centroids on the map
-overplot_geo_space(geocentroids, ranges; mask = sa_mask)
+overplot_geo_space(gc, ranges; mask = sa_mask)
 
 # divide the range sizes into quantiles for plotting
 rangequants = asquantile(ranges, 4)
