@@ -3,7 +3,7 @@ using RasterDataSources
 using MultivariateStats
 using DataFrames
 using ArchGDAL
-using GeoInterface
+using GeoInterface; const GI = GeoInterface
 using LibGEOS
 using Stencils
 using Extents
@@ -42,8 +42,6 @@ function do_pca(bioclim_sa, sa_mask)
 end
 
 # Load the bird shapefiles and pick the ones in South America
-
-const GI = GeoInterface
 
 function loadranges(data::String, batches::Int, mask, datadir)
     shapefiles = [joinpath(datadir, data, "batch_$i.shp") for i in 1:batches]
