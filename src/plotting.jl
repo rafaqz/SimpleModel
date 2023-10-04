@@ -18,7 +18,7 @@ end
 
 # This plots the distribution of a random species on the map
 function plot_distribution(species, mask = sa_mask)
-    Plots.plot(maske, fill = :grey)
+    Plots.plot(mask, fill = :grey)
     Plots.plot!(get_speciesmask(rand(allspecies)))
 end
 
