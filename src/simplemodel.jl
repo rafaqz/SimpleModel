@@ -71,3 +71,9 @@ function asquantile(vec, n)
     [findlast(<(r), q) for r in vec]
 end
 
+function overlap(el::Ellipse, polygon; n = 100)
+    ellipse_points = points_to_geo(decompose(el; n)...)
+    ellipse_poly = GI.Polygon([GI.LinearRing(GI.getpoint(ellipse_points))])
+    LibGEOS.area(LibGEOS.intersection(polygon, ellipse_poly)) / LibGEOS.area(ellipse_poly)
+end
+
