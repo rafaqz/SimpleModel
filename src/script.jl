@@ -120,6 +120,8 @@ for area in allhulls
     push!(ellipses, el)
 end
 
+# TODO possibly inside the loop above: grow a range based on the ellipse from a random point 
+
 p = Plots.scatter(pca1, pca2, mc = :grey, ms = 1, msw = 0, aspect_ratio = 1, label = "")
 for el in rand(ellipses, 50)
     Plots.plot!(p, el, label = "")
