@@ -106,4 +106,15 @@ for i in 1:4
 end
 f
 
+chull_all = LibGEOS.convexhull(points_to_geo(pca1, pca2))
+bbox_all = (extrema(pca1), extrema(pca2))
 
+ellipses = Ellipse[]
+for area in allhulls
+    ovrlp = 0
+    while ovrlp < 0.9
+        el = rand(Ellipse, xlims = first(bbox_all), ylims = last(bbox_all), area = area)
+        ovrlp = area != 0 ? overlap(el, chull_all) : 1
+    end
+    push!(ellipses, el)
+end
