@@ -43,10 +43,21 @@ function decompose(el::Ellipse; n = 100)
 end
 
 @recipe f(el::Ellipse; n = 100) = decompose(el; n)
+
+truncnormrand() = clamp(randn(), -2, 2) / 6 + 0.5
+truncrand() = clamp(rand(), 0.3, 0.99)
+
 import Random.rand
-function Random.rand(::Type{Ellipse}; 
-    xlims=(0,1), ylims=(0,1), area = 1) 
-    a = rand() * sqrt(pi)
+
+# a random ellipse around a given center
+function Random.rand(::Type{Ellipse}, x::Number, y::Number; 
+    area = 1, lengthfun = truncrand) 
+    a = lengthfun() * sqrt(pi)
     b = 1 / (pi * a)
-    Ellipse(rescale(rand(), xlims...), rescale(rand(), ylims...), a * sqrt(area), b * sqrt(area), rand()π)
+    a, b = extrema((a,b))
+    Ellipse(x, y, a * sqrt(area), b * sqrt(area), rand()π)
 end
+
+# pick the center randomly between some limits
+Random.rand(::Type{Ellipse}; xlims=(0,1), ylims=(0,1), area = 1, lengthfun = truncrand) = 
+    rand(Ellipse, rescale(rand(), xlims...), rescale(rand(), ylims...); area, lengthfun)
