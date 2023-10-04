@@ -42,7 +42,7 @@ function decompose(el::Ellipse; n = 100)
     x_ret .+ el.center_x, y_ret .+ el.center_y
 end
 
-@recipe f(el::Ellipse; n = 100) = decompose(el; n)
+RecipesBase.@recipe f(el::Ellipse; n = 100) = decompose(el; n)
 
 truncnormrand() = clamp(randn(), -2, 2) / 6 + 0.5
 truncrand() = clamp(rand(), 0.3, 0.99)
