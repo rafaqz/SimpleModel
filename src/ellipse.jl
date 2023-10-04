@@ -35,8 +35,8 @@ rescale(x, min_x, max_x) = (max_x - min_x)*x + min_x
 function decompose(el::Ellipse; n = 100)
     xs = range(-el.length, el.length, length = n)
     ys = [sqrt(1 - (x/el.length)^2) * el.width for x in xs]
-    xs = [xs; reverse(xs)]
-    ys = [ys; reverse(-ys)]
+    xs = [xs; reverse(xs); first(xs)]
+    ys = [ys; reverse(-ys); first(ys)]
     x_ret = xs .* cos.(el.angle) - ys .* sin.(el.angle)
     y_ret = xs .* sin.(el.angle) + ys .* cos.(el.angle)
     x_ret .+ el.center_x, y_ret .+ el.center_y
