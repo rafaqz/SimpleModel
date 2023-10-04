@@ -1,4 +1,5 @@
 using Random
+using RecipesBase
 
 # A basic Ellipse struct
 struct Ellipse
@@ -31,6 +32,17 @@ in_ellipse(point, el::Ellipse) = distance(point, el) <= 1
 
 rescale(x, min_x, max_x) = (max_x - min_x)*x + min_x
 
+function decompose(el::Ellipse; n = 100)
+    xs = range(-el.length, el.length, length = n)
+    ys = [sqrt(1 - (x/el.length)^2) * el.width for x in xs]
+    xs = [xs; reverse(xs)]
+    ys = [ys; reverse(-ys)]
+    x_ret = xs .* cos.(el.angle) - ys .* sin.(el.angle)
+    y_ret = xs .* sin.(el.angle) + ys .* cos.(el.angle)
+    x_ret .+ el.center_x, y_ret .+ el.center_y
+end
+
+@recipe f(el::Ellipse; n = 100) = decompose(el; n)
 import Random.rand
 function Random.rand(::Type{Ellipse}; 
     xlims=(0,1), ylims=(0,1), area = 1) 
