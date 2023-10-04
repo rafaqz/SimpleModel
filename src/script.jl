@@ -111,10 +111,17 @@ bbox_all = (extrema(pca1), extrema(pca2))
 
 ellipses = Ellipse[]
 for area in allhulls
-    ovrlp = 0
+    el = rand(Ellipse, xlims = first(bbox_all), ylims = last(bbox_all), area = area)
+    ovrlp = area != 0 ? overlap(el, chull_all) : 1
     while ovrlp < 0.9
         el = rand(Ellipse, xlims = first(bbox_all), ylims = last(bbox_all), area = area)
         ovrlp = area != 0 ? overlap(el, chull_all) : 1
     end
     push!(ellipses, el)
 end
+
+p = Plots.scatter(pca1, pca2, mc = :grey, ms = 1, msw = 0, aspect_ratio = 1, label = "")
+for el in rand(ellipses, 50)
+    Plots.plot!(p, el, label = "")
+end
+p
