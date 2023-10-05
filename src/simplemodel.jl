@@ -22,11 +22,13 @@ using Extents
 using Shapefile
 
 # Create a raster map from a vector of observations in the right order
-function do_map(pca, sa_mask)
-    map = fill(NaN, dims(sa_mask); missingval=NaN)
+function do_map(pca, sa_mask; missingval = NaN)
+    map = fill(missingval, dims(sa_mask); missingval)
     map[sa_mask] .= pca
     map
 end
+
+
 
 # a function to rasterize a species by name
 function get_speciesmask(name; geoms = sa_geoms, mask = sa_mask)
