@@ -1,41 +1,55 @@
 using Plots
 using GLMakie
 using Rasters
+using JLSO
+using GeoInterface; const GI = GeoInterface
+using LibGEOS
+using ConcaveHull
 
-include("prepare_data.jl")
+
 include("plotting.jl")
 include("ellipse.jl")
 include("simplemodel.jl")
 
 ###--- First we load all the data
 
-## Get the environmental data
-bioclim_sa = prepare_environment("/Users/cvg147/Library/CloudStorage/Dropbox/Arbejde/Data")
-sa_mask = boolmask(bioclim_sa.bio15)
+datadir = "/Users/cvg147/Library/CloudStorage/Dropbox/Arbejde/Data"
 
-# and visualize
-Plots.plot(bioclim_sa.bio1)
+try
+    obj = JLSO.load(joinpath(datadir, "processed_objects.jls"))
+    pca1, pca2, pca_maps, bioclim_sa, sa_mask, allranges, allspecies = obj[:obj]
+catch
+    include("prepare_data.jl")
 
-## get the PCA
-pca1, pca2, model = do_pca(bioclim_sa, sa_mask)
+    ## Get the environmental data
+    bioclim_sa = prepare_environment(datadir)
+    sa_mask = boolmask(bioclim_sa.bio15)
 
-# and convert the results to raster
-pca_maps = RasterStack((pca1=do_map(pca1, sa_mask), pca2=do_map(pca2, sa_mask)))
+    # and visualize
+    Plots.plot(bioclim_sa.bio1)
 
-# and visualize
-Plots.plot(pca_maps)
-biplot(pca1, pca2, model, string.(names(bioclim_sa)))
+    ## get the PCA
+    pca1, pca2, model = do_pca(bioclim_sa, sa_mask)
 
-# Get the bird data (this takes time)
-sa_geoms = loadranges("Birds", 5, sa_mask, "/Users/cvg147/Library/CloudStorage/Dropbox/Arbejde/Data")
-# names of all species
-allspecies = unique(sa_geoms.sci_name)
+    # and convert the results to raster
+    pca_maps = RasterStack((pca1=do_map(pca1, sa_mask), pca2=do_map(pca2, sa_mask)))
+
+    # and visualize
+    Plots.plot(pca_maps)
+    biplot(pca1, pca2, model, string.(names(bioclim_sa)))
+
+    # Get the bird data (this takes time)
+    sa_geoms = loadranges("Birds", 5, sa_mask, "/Users/cvg147/Library/CloudStorage/Dropbox/Arbejde/Data")
+    # names of all species
+    allspecies = unique(sa_geoms.sci_name)
+    allranges = RasterSeries([get_speciesmask(name; geoms = sa_geoms, mask = sa_mask) for name in allspecies], (; name = allspecies))
+    JLSO.save(joinpath(datadir, "processed_objects.jls"), :obj => (pca1, pca2, pca_maps, bioclim_sa, sa_mask, allranges, allspecies))
+end
 
 ###--- Exploratory data analysis
 
 # Count total diversity
-diversity = rasterize(count, sa_geoms; to=sa_mask, boundary=:touches)
-diversity .*= sa_mask
+diversity = reduce(+, allranges)
 Plots.plot(diversity)
 
 
@@ -74,8 +88,8 @@ Plots.scatter(xrange ./ yrange)
 ###--- Patterns of range and niche size in climate space
 
 # get environmental centroids and range sizes for all species
-allcentroids = get_centroid.(get_speciesmask.(allspecies))
-ranges = count.(get_speciesmask.(allspecies))
+allcentroids = vec(get_centroid.(allranges))
+ranges = vec(count.(allranges))
 
 # This figure shows the geographic range size of ranges on the environmental centroids (in environment spaecs)
 overplot_pca_space(allcentroids, ranges)

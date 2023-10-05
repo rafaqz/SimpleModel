@@ -17,14 +17,14 @@ function biplot(pca1, pca2, model, labels = [""])
 end
 
 # This plots the distribution of a random species on the map
-function plot_distribution(species, mask = sa_mask)
+function plot_distribution(species, mask = sa_mask, ranges = allranges)
     Plots.plot(mask, fill = :grey)
-    Plots.plot!(get_speciesmask(rand(allspecies)))
+    Plots.plot!(ranges[At(species)])
 end
 
 # Creates two side-by-side plots, one in geographic space, the other in climate space
 # Shows the occurrence points of all the species defined by speciesnames
-function plot_species(speciesnames; mask = sa_mask, pca1 = pca1, pca2 = pca2, pca_maps = pca_maps)
+function plot_species(speciesnames; mask = sa_mask, pca1 = pca1, pca2 = pca2, pca_maps = pca_maps, allranges = allranges)
     f = Figure(resolution = (1500, 700))
     a = Axis(f[1,1], aspect = DataAspect())
     b = Axis(f[1,2], aspect = DataAspect())
@@ -34,7 +34,7 @@ function plot_species(speciesnames; mask = sa_mask, pca1 = pca1, pca2 = pca2, pc
     rich = fill(NaN, dims(sa_mask))
 
     for (i, spec) in enumerate(speciesnames)
-        species_mask = get_speciesmask(spec)
+        species_mask = allranges[At(spec)]
         rich[species_mask] .= i
         Makie.scatter!(b, pca_maps.pca1[species_mask], pca_maps.pca2[species_mask]; 
             markersize = 0.2, label = spec,

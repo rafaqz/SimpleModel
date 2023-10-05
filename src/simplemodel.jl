@@ -40,7 +40,7 @@ function get_climate(speciesmask::Raster; pcas = pca_maps)
     filter(isfinite, first(pcas)[speciesmask]), filter(isfinite, last(pcas)[speciesmask])
 end
 
-get_climate(species::String; pcas = pca_maps) = get_climate(get_speciesmask(species); pcas)
+get_climate(species::String; pcas = pca_maps, allranges = allranges) = get_climate(allranges[At(species)]; pcas)
 
 function points_to_geo(xs, ys)
     length(xs) < 1 && return GI.MultiPoint([(0,0)])
@@ -59,7 +59,7 @@ hullarea(species) = LibGEOS.area(gethull(species))
 
 # Get the geographical centroid of a species
 function geocentroids(name)
-    a = get_speciesmask(name)
+    a = allranges[At(name)]
     dp = DimPoints(a)[a]
     isempty(dp) && return(NaN, NaN)
     mean(first, dp), mean(last, dp)
