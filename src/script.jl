@@ -158,7 +158,12 @@ p
 Plots.default(msw = 0, ms = 1, aspect_ratio = 1, seriescolor = cgrad(:Spectral, rev = true), legend = false, colorbar = true)
 elpoint = [count(el -> in_ellipse(pt, el), ellipses) for pt in zip(pca1, pca2)]
 Plots.plot(
-    Plots.scatter(pca1, pca2, marker_z = elpoint, title = "ellipse overlap"), # on ellipses
-    Plots.scatter(pca1, pca2, marker_z = diversity[sa_mask], title = "empirical richness") # empirical
+    Plots.scatter(pca1, pca2, marker_z = elpoint, title = "ellipse overlap"), 
+    Plots.scatter(pca1, pca2, marker_z = diversity[sa_mask], title = "empirical richness") 
 )
+
+el = rand(ellipses)
+els = [in_ellipse(pt, el) for pt in zip(pca1, pca2)]
+b = fill!(copy(sa_mask), false)
+b[sa_mask] .= els
 

@@ -52,8 +52,8 @@ Plots.heatmap(rel')
 
 el = rand(ellipses)
 els = [in_ellipse(pt, el) for pt in zip(pca1, pca2)]
-b = fill!(copy(sa_mask), false)
-b[sa_mask] .= els
+elmap = do_map(els, sa_mask; missingval = false)
+
 
 # els = bioclim_sa.bio1 .> 25
 # Polygonize the masks
