@@ -13,11 +13,10 @@ include("simplemodel.jl")
 
 ###--- First we load all the data
 
-datadir = "/Users/cvg147/Library/CloudStorage/Dropbox/Arbejde/Data"
+datadir = "/Users/Michael/Library/CloudStorage/Dropbox/Arbejde/Data"
 
-try
-    obj = JLSO.load(joinpath(datadir, "processed_objects.jls"))
-    pca1, pca2, pca_maps, bioclim_sa, sa_mask, allranges, allspecies = obj[:obj]
+obj = try
+    JLSO.load(joinpath(datadir, "processed_objects.jls"))
 catch
     include("prepare_data.jl")
 
@@ -43,9 +42,12 @@ catch
     # names of all species
     allspecies = unique(sa_geoms.sci_name)
     allranges = RasterSeries([get_speciesmask(name; geoms = sa_geoms, mask = sa_mask) for name in allspecies], (; name = allspecies))
-    JLSO.save(joinpath(datadir, "processed_objects.jls"), :obj => (pca1, pca2, pca_maps, bioclim_sa, sa_mask, allranges, allspecies))
+    obj = :obj => (pca1, pca2, pca_maps, bioclim_sa, sa_mask, allranges, allspecies)
+    JLSO.save(joinpath(datadir, "processed_objects.jls"), ret)
+    Dict(ret)
 end
 
+pca1, pca2, pca_maps, bioclim_sa, sa_mask, allranges, allspecies = obj[:obj]
 ###--- Exploratory data analysis
 
 # Count total diversity
