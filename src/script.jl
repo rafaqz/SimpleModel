@@ -123,14 +123,24 @@ f
 chull_all = LibGEOS.convexhull(points_to_geo(pca1, pca2))
 bbox_all = (extrema(pca1), extrema(pca2))
 
+cc = concave_hull(ConcaveHull.KDTree(vcat(pca1', pca2'), reorder = false), 40)
+concave = GI.Polygon([GI.LinearRing([cc.vertices; [first(cc.vertices)]])])
+chull_all = concave # I am currently overwriting with a concave hull to see the effect
+
 ellipses = Ellipse[]
 for area in allhulls
+    ## replace the line below with this to pick the real grid cells as ellipse centers, rather than a random point
+    # centerpoint = rand(1:length(pca1))
+    # el = rand(Ellipse, pca1[centerpoint], pca2[centerpoint], area = area)
+
     el = rand(Ellipse, xlims = first(bbox_all), ylims = last(bbox_all), area = area)
     ovrlp = area != 0 ? overlap(el, chull_all) : 1
-    while ovrlp < 0.9
+    failsafe = 0
+    while ovrlp < 0.8 && (failsafe += 1) < 1000 
         el = rand(Ellipse, xlims = first(bbox_all), ylims = last(bbox_all), area = area)
         ovrlp = area != 0 ? overlap(el, chull_all) : 1
     end
+    failsafe == 1000 && @show area
     push!(ellipses, el)
 end
 
