@@ -8,10 +8,10 @@ using GeoInterfaceRecipes
 # visualize a PCA biplot
 
 function biplot(pca1, pca2, model, labels = [""])
-    p = Makie.scatter(collect(zip(pca1, pca2)); color=(:grey, 0.5))
+    p = GLMakie.scatter(collect(zip(pca1, pca2)); color=(:grey, 0.5))
     for i in 1:19
-        Makie.lines!([(0,0), 15 .* (projection(model)[i,:]...,)], color = :red)
-        Makie.text!((15 .* projection(model)[i,:])..., text = labels[i])
+        GLMakie.lines!([(0,0), 15 .* (projection(model)[i,:]...,)], color = :red)
+        GLMakie.text!((15 .* projection(model)[i,:])..., text = labels[i])
     end
     p
 end
