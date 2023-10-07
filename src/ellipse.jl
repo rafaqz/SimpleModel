@@ -62,6 +62,8 @@ end
 Random.rand(::Type{Ellipse}; xlims=(0,1), ylims=(0,1), area = 1, lengthfun = truncrand) = 
     rand(Ellipse, rescale(rand(), xlims...), rescale(rand(), ylims...); area, lengthfun)
 
+area(el::Ellipse) = el.length * el.width * π
+
 using Statistics
 using LinearAlgebra
 
