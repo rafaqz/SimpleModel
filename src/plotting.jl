@@ -70,9 +70,11 @@ function overplot_geo_space(points, col; mask = sa_mask)
     f
 end
 
-function plot_species_pca(speciesname)
+function plot_species_pca(speciesname, sigma = 2; weighted = false)
+    @show speciesname
     xs, ys = get_climate(speciesname)
-    el = fitellipse(xs, ys)
+    length(xs) < 2 && return(Plots.scatter(pca1, pca2, ms = 1, mc = :grey, msw = 0, label = "", title = speciesname, aspect_ratio = 1))
+    el = fitellipse(xs, ys, sigma; weight = weighted ? getweights(xs, ys) : ones(length(xs)))
     p = Plots.scatter(pca1, pca2, ms = 1, mc = :grey, msw = 0, label = "", title = speciesname, aspect_ratio = 1)
     Plots.scatter!(p, xs, ys, ms = 2, mc = :red, msw = 0, label = "occurrences")
     Plots.plot!(p, el, color = :blue, lw = 1, label = "niche")

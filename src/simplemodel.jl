@@ -79,3 +79,7 @@ function overlap(el::Ellipse, polygon; n = 100)
     LibGEOS.area(LibGEOS.intersection(polygon, ellipse_poly)) / LibGEOS.area(ellipse_poly)
 end
 
+points_in_cell(x, y) = hist2.weights[findfirst(>(x), hist2.edges[1])-1, findfirst(>(y), hist2.edges[2])-1]
+getweights(xs, ys) = [1/points_in_cell(xs[i], ys[i]) for i in eachindex(xs, ys)]
+
+
