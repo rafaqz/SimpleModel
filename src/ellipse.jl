@@ -61,3 +61,16 @@ end
 # pick the center randomly between some limits
 Random.rand(::Type{Ellipse}; xlims=(0,1), ylims=(0,1), area = 1, lengthfun = truncrand) = 
     rand(Ellipse, rescale(rand(), xlims...), rescale(rand(), ylims...); area, lengthfun)
+
+using Statistics
+using LinearAlgebra
+
+# possibly use a covariance matrix weighted
+# by the 1 / number of point occurrences in
+# the same pca grid cell?
+function fitellipse(xs, ys, sigma = 2)
+    evals, evecs = eigen(cov([xs ys]))
+    a, b = sigma .* sqrt.(evals)
+    angle = atan(evecs[2,1] / evecs[1,1])
+    Ellipse(mean(xs), mean(ys), a, b, angle)
+end
