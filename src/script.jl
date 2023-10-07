@@ -177,3 +177,8 @@ scatter(xs, ys)
 plot!(fitellipse(xs, ys))
 
 # Now try it for a species in pca space
+plot_species_pca(rand(allspecies))
+p = Plots.plot([
+    plot_species_pca(rand(allspecies)) for i in 1:16]...
+, size = (1200, 1200))
+savefig(p, "myplot.png")
