@@ -68,9 +68,10 @@ using LinearAlgebra
 # possibly use a covariance matrix weighted
 # by the 1 / number of point occurrences in
 # the same pca grid cell?
-function fitellipse(xs, ys, sigma = 2)
-    evals, evecs = eigen(cov([xs ys]))
+function fitellipse(xs, ys, sigma = 2; weight = ones(length(xs)))
+    evals, evecs = eigen(cov([xs ys], weights(weight)))
     a, b = sigma .* sqrt.(evals)
     angle = atan(evecs[2,1] / evecs[1,1])
-    Ellipse(mean(xs), mean(ys), a, b, angle)
+    Ellipse(mean(xs, weights(weight)), mean(ys, weights(weight)), a, b, angle)
 end
+
