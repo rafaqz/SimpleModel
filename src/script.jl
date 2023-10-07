@@ -169,3 +169,11 @@ els = [in_ellipse(pt, el) for pt in zip(pca1, pca2)]
 b = fill!(copy(sa_mask), false)
 b[sa_mask] .= els
 
+
+# test fitellipse
+xs = 10randn(100) .+ 4
+ys = xs .+ 3randn(100)
+scatter(xs, ys)
+plot!(fitellipse(xs, ys))
+
+# Now try it for a species in pca space
