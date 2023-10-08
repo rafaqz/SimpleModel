@@ -193,5 +193,18 @@ p = Plots.plot([
 , size = (1200, 1200))
 savefig(p, "myplot3.png")
 
+# fit ellptical niches for all species
+els = fitellipse.(allspecies)
 
+# show patterns of ellipse area
+ares = area.(els)
+histogram(ares)
+Plots.scatter((el -> (el.center_x, el.center_y)).(els), marker_z = ares, ms = 3)
 
+# repeat the plot with 
+Plots.default(msw = 0, ms = 1, aspect_ratio = 1, seriescolor = cgrad(:Spectral, rev = true), legend = false, colorbar = true)
+el_emp_point = [count(el -> in_ellipse(pt, el), els) for pt in zip(pca1, pca2)]
+Plots.plot(
+    Plots.scatter(pca1, pca2, marker_z = el_emp_point, title = "fitted ellipse overlap"), 
+    Plots.scatter(pca1, pca2, marker_z = diversity[sa_mask], title = "empirical richness") 
+)
