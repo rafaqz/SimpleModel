@@ -10,14 +10,6 @@ struct Ellipse
     angle::Float64 # Given in radians
 end
 
-# check if the point `(xp, yp)`` is in an ellipse centered on (`x`,`y`) 
-# with angle `an` (in radians), width `a` and height `b`
-function in_ellipse((xp,yp), an, x, y, a, b)
-    a = (cos(an) * (xp-x) + sin(an)*(yp-y))^2 / a^2
-    b = (sin(an) * (xp-x) + cos(an)*(yp-y))^2 / b^2
-    a+b < 1
-end
-
 function distance(point::Tuple, el::Ellipse)
     cosa = cos(el.angle)
     sina = sin(el.angle)
