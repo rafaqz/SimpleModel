@@ -81,5 +81,8 @@ end
 
 points_in_cell(x, y) = hist2.weights[findfirst(>(x), hist2.edges[1])-1, findfirst(>(y), hist2.edges[2])-1]
 getweights(xs, ys) = [1/points_in_cell(xs[i], ys[i]) for i in eachindex(xs, ys)]
-
-
+function fitellipse(speciesname::String, sigma = 2; weighted = false) 
+    xs, ys = get_climate(speciesname)
+    length(xs) < 3 && return Ellipse(0, 0, 0, 0, 0)
+    fitellipse(xs, ys, sigma; weight = weighted ? getweights(xs, ys) : ones(length(xs)))
+end
