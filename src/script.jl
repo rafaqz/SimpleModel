@@ -154,8 +154,6 @@ for el in rand(ellipses, 50)
 end
 p
 
-
-
 # plot the modelled and empirical richness
 Plots.default(msw = 0, ms = 1, aspect_ratio = 1, seriescolor = cgrad(:Spectral, rev = true), legend = false, colorbar = true)
 elpoint = [count(el -> in_ellipse(pt, el), ellipses) for pt in zip(pca1, pca2)]
@@ -169,15 +167,14 @@ els = [in_ellipse(pt, el) for pt in zip(pca1, pca2)]
 b = fill!(copy(sa_mask), false)
 b[sa_mask] .= els
 
-
 # test fitellipse
 xs = 10randn(100) .+ 4
 ys = xs .+ 3randn(100)
-scatter(xs, ys)
-plot!(fitellipse(xs, ys))
+Plots.scatter(xs, ys)
+Plots.plot!(fit(Ellipse, xs, ys, 2))
 
 # Now try it for a species in pca space
-plot_species_pca(rand(allspecies), 2, weight = weightvec)
+plot_species_pca(rand(allspecies), 2, weighted = false)
 
 p = Plots.plot([
     plot_species_pca(rand(allspecies)) for i in 1:16]...

@@ -24,17 +24,18 @@ in_ellipse(point, el::Ellipse) = distance(point, el) <= 1
 
 rescale(x, min_x, max_x) = (max_x - min_x)*x + min_x
 
-function decompose(el::Ellipse; n = 100)
-    xs = range(-el.length, el.length, length = n)
+import GeometryBasics
+function GeometryBasics.coordinates(el::Ellipse, nvertices = 100)
+    xs = range(-el.length, el.length, length = nvertices ÷ 2)
     ys = [sqrt(1 - (x/el.length)^2) * el.width for x in xs]
-    xs = [xs; reverse(xs); first(xs)]
-    ys = [ys; reverse(-ys); first(ys)]
+    xs = [xs; reverse(xs)[2:end]; first(xs)]
+    ys = [ys; reverse(-ys)[2:end]; first(ys)]
     x_ret = xs .* cos.(el.angle) - ys .* sin.(el.angle)
     y_ret = xs .* sin.(el.angle) + ys .* cos.(el.angle)
-    x_ret .+ el.center_x, y_ret .+ el.center_y
+    Point2.(zip(x_ret .+ el.center_x, y_ret .+ el.center_y))
 end
 
-RecipesBase.@recipe f(el::Ellipse; n = 100) = decompose(el; n)
+RecipesBase.@recipe f(el::Ellipse; nvertices = 100) = GeometryBasics.coordinates(el, nvertices)
 
 truncnormrand() = clamp(randn(), -2, 2) / 6 + 0.5
 truncrand() = clamp(rand(), 0.3, 0.99)
@@ -54,7 +55,7 @@ end
 Random.rand(::Type{Ellipse}; xlims=(0,1), ylims=(0,1), area = 1, lengthfun = truncrand) = 
     rand(Ellipse, rescale(rand(), xlims...), rescale(rand(), ylims...); area, lengthfun)
 
-area(el::Ellipse) = el.length * el.width * π
+GeometryBasics.area(el::Ellipse) = el.length * el.width * π
 
 using Statistics
 using LinearAlgebra
@@ -62,10 +63,13 @@ using LinearAlgebra
 # possibly use a covariance matrix weighted
 # by the 1 / number of point occurrences in
 # the same pca grid cell?
-function fitellipse(xs, ys, sigma = 2; weight = ones(length(xs)))
+import StatsBase
+function StatsBase.fit(::Type{Ellipse}, xs, ys, sigma = 2; weight = ones(length(xs)))
     evals, evecs = eigen(cov([xs ys], weights(weight)))
     a, b = sigma .* sqrt.(evals)
     angle = atan(evecs[2,1] / evecs[1,1])
     Ellipse(mean(xs, weights(weight)), mean(ys, weights(weight)), a, b, angle)
 end
+
+
 

@@ -49,6 +49,8 @@ function points_to_geo(xs, ys)
     GI.MultiPoint(collect(zip(xs, ys)))
 end
 
+points_to_geo(points) = GI.MultiPoint(points)
+
 # find the centroid in climate space of a species
 function get_centroid(speciesmask; pcas = pca_maps)
     x, y = get_climate(speciesmask; pcas)
@@ -74,7 +76,7 @@ function asquantile(vec, n)
 end
 
 function overlap(el::Ellipse, polygon; n = 100)
-    ellipse_points = points_to_geo(decompose(el; n)...)
+    ellipse_points = points_to_geo(coordinates(el, n))
     ellipse_poly = GI.Polygon([GI.LinearRing(GI.getpoint(ellipse_points))])
     LibGEOS.area(LibGEOS.intersection(polygon, ellipse_poly)) / LibGEOS.area(ellipse_poly)
 end
@@ -84,5 +86,5 @@ getweights(xs, ys) = [1/points_in_cell(xs[i], ys[i]) for i in eachindex(xs, ys)]
 function fitellipse(speciesname::String, sigma = 2; weighted = false) 
     xs, ys = get_climate(speciesname)
     length(xs) < 3 && return Ellipse(0, 0, 0, 0, 0)
-    fitellipse(xs, ys, sigma; weight = weighted ? getweights(xs, ys) : ones(length(xs)))
+    fit(Ellipse, xs, ys, sigma; weight = weighted ? getweights(xs, ys) : ones(length(xs)))
 end
