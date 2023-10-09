@@ -204,3 +204,4 @@ Plots.plot(
     Plots.scatter(pca1, pca2, marker_z = el_emp_point, title = "fitted ellipse overlap"), 
     Plots.scatter(pca1, pca2, marker_z = diversity[sa_mask], title = "empirical richness") 
 )
+savefig("ellipse_richness.png")
