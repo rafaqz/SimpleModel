@@ -74,11 +74,31 @@ function plot_species_pca(speciesname, sigma = 2; weighted = false)
     @show speciesname
     xs, ys = get_climate(speciesname)
     length(xs) < 2 && return(Plots.scatter(pca1, pca2, ms = 1, mc = :grey, msw = 0, label = "", title = speciesname, aspect_ratio = 1))
-    el = fit(Ellipse, xs, ys, sigma; weight = weighted ? getweights(xs, ys) : ones(length(xs)))
+    el = fit(Ellipse, xs, ys, sigma; weight = weighted ? weightmap[allranges[At(speciesname)]] : ones(length(xs)))
     p = Plots.scatter(pca1, pca2, ms = 1, mc = :grey, msw = 0, label = "", title = speciesname, aspect_ratio = 1)
     Plots.scatter!(p, xs, ys, ms = 2, mc = :red, msw = 0, label = "occurrences")
     Plots.plot!(p, el, color = :blue, lw = 1, label = "niche")
     p
 end
 
-
+const climvars = Dict(
+    :bio1  => "mean annual air temperature",
+    :bio2  => "mean diurnal air temperature range",
+    :bio3  => "isothermality",
+    :bio4  => "temperature seasonality",
+    :bio5  => "mean daily maximum air temperature of the warmest month",
+    :bio6  => "mean daily minimum air temperature of the coldest month",
+    :bio7  => "annual range of air temperature",
+    :bio8  => "mean daily mean air temperatures of the wettest quarter",
+    :bio9  => "mean daily mean air temperatures of the driest quarter",
+    :bio10  => "mean daily mean air temperatures of the warmest quarter",
+    :bio11  => "mean daily mean air temperatures of the coldest quarter",
+    :bio12  => "annual precipitation amount",
+    :bio13  => "precipitation amount of the wettest month",
+    :bio14  => "precipitation amount of the driest month",
+    :bio15  => "precipitation seasonality",
+    :bio16  => "mean monthly precipitation amount of the wettest quarter",
+    :bio17  => "mean monthly precipitation amount of the driest quarter",
+    :bio18  => "mean monthly precipitation amount of the warmest quarter",
+    :bio19  => "mean monthly precipitation amount of the coldest quarter"
+)
