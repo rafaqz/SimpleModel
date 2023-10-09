@@ -79,10 +79,16 @@ function overlap(el::Ellipse, polygon; n = 100)
     LibGEOS.area(LibGEOS.intersection(polygon, ellipse_poly)) / LibGEOS.area(ellipse_poly)
 end
 
-points_in_cell(x, y) = hist2.weights[findfirst(>(x), hist2.edges[1])-1, findfirst(>(y), hist2.edges[2])-1]
-getweights(xs, ys) = [1/points_in_cell(xs[i], ys[i]) for i in eachindex(xs, ys)]
+function makeweights(x, y, binsize = 0.1)
+    makebins(i) = floor(minimum(i)):binsize:ceil(maximum(i))
+    points_in_cell(x, y, hist) = hist.weights[findfirst(>(x), hist.edges[1])-1, findfirst(>(y), hist.edges[2])-1]
+
+    hist = fit(Histogram, (x, y), (makebins(x), makebins(y)))
+    [1/points_in_cell(x[i], y[i], hist) for i in eachindex(x, y)]
+end
+
 function fitellipse(speciesname::String, sigma = 2; weighted = false) 
     xs, ys = get_climate(speciesname)
     length(xs) < 3 && return Ellipse(0, 0, 0, 0, 0)
-    fit(Ellipse, xs, ys, sigma; weight = weighted ? getweights(xs, ys) : ones(length(xs)))
+    fit(Ellipse, xs, ys, sigma; weight = weighted ? weightmap[allranges[speciesname]] : ones(length(xs)))
 end

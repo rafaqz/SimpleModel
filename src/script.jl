@@ -174,7 +174,7 @@ Plots.scatter(xs, ys)
 Plots.plot!(fit(Ellipse, xs, ys, 2))
 
 # Now try it for a species in pca space
-plot_species_pca(rand(allspecies), 2, weighted = false)
+plot_species_pca(rand(allspecies), 2,)
 
 p = Plots.plot([
     plot_species_pca(rand(allspecies)) for i in 1:16]...
@@ -182,8 +182,7 @@ p = Plots.plot([
 savefig(p, "myplot.png")
 
 # Now control for the number of poitns in the same grid cell
-hist2 = fit(Histogram, (pca1, pca2), (-6:0.1:10, -9:0.1:6))
-Plots.plot(hist2)
+weightmap = do_map(makeweights(pca1, pca2, 0.1), sa_mask)
 
 p = Plots.plot([
     plot_species_pca(rand(allspecies), 1.5, weighted = true) for i in 1:16]...
