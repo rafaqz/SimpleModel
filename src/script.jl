@@ -43,8 +43,8 @@ catch
     allspecies = unique(sa_geoms.sci_name)
     allranges = RasterSeries([get_speciesmask(name; geoms = sa_geoms, mask = sa_mask) for name in allspecies], (; name = allspecies))
     obj = :obj => (pca1, pca2, pca_maps, bioclim_sa, sa_mask, allranges, allspecies)
-    JLSO.save(joinpath(datadir, "processed_objects.jls"), ret)
-    Dict(ret)
+    JLSO.save(joinpath(datadir, "processed_objects.jls"), obj)
+    Dict(obj)
 end
 
 pca1, pca2, pca_maps, bioclim_sa, sa_mask, allranges, allspecies = obj[:obj]
