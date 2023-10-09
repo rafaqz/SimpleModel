@@ -55,6 +55,25 @@ function get_centroid(speciesmask; pcas = pca_maps)
     mean(x), mean(y)
 end
 
+function find_range_shapes(allspecies)
+    cors = Float64[]
+    xrange = Float64[]
+    yrange = Float64[]
+    for spec in allspecies
+        x, y = get_climate(spec)
+        if isempty(x)
+            push!(cors, 0)
+            push!(xrange, 0)
+            push!(yrange, 0)
+        else
+            push!(cors, cor(x,y))
+            push!(xrange, maximum(x) - minimum(x))
+            push!(yrange, maximum(y) - minimum(y))
+        end
+    end
+    cors, xrange, yrange
+end
+
 # These functions create convex hulls in environmental space and calculate their area
 gethull(species) = convexhull(points_to_geo(get_climate(species)...))
 hullarea(species) = LibGEOS.area(gethull(species))

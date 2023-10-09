@@ -68,23 +68,9 @@ plot_species(specs)
 
 
 ## how are ranges shaped?
-cors = Float64[]
-xrange = Float64[]
-yrange = Float64[]
-for spec in allspecies
-    x, y = get_climate(spec)
-    if isempty(x)
-        push!(cors, 0)
-        push!(xrange, 0)
-        push!(yrange, 0)
-    else
-        push!(cors, cor(x,y))
-        push!(xrange, maximum(x) - minimum(x))
-        push!(yrange, maximum(y) - minimum(y))
-    end
-end
+cors, xrange, yrange = find_range_shapes(allspecies)
 histogram(cors)
-Plots.scatter(xrange ./ yrange)
+Plots.scatter(xrange, yrange)
 
 
 ###--- Patterns of range and niche size in climate space
@@ -111,7 +97,7 @@ overplot_geo_space(gc, ranges; mask = sa_mask)
 # divide the range sizes into quantiles for plotting
 rangequants = asquantile(ranges, 4)
 
-# and plot them #TODO simplify
+# and plot them
 f = Figure()
 aspect = DataAspect()
 axs = [Axis(f[1,1]; aspect), Axis(f[2,1]; aspect), Axis(f[1,2]; aspect), Axis(f[2,2]; aspect)]
@@ -122,16 +108,56 @@ for i in 1:4
 end
 f
 
-chull_all = LibGEOS.convexhull(points_to_geo(pca1, pca2))
+# Find the convex and concave hulls around all the points in pca space
+## chull_all = LibGEOS.convexhull(points_to_geo(pca1, pca2))
 bbox_all = (extrema(pca1), extrema(pca2))
-
 cc = concave_hull(ConcaveHull.KDTree(vcat(pca1', pca2'), reorder = false), 40)
-concave = GI.Polygon([GI.LinearRing([cc.vertices; [first(cc.vertices)]])])
-chull_all = concave # I am currently overwriting with a concave hull to see the effect
+chull_all = GI.Polygon([GI.LinearRing([cc.vertices; [first(cc.vertices)]])])
+# I am currently overwriting with a concave hull to see the effect
+# This is the hull around all of the occupied space
 
+
+# Now fit an ellipse to a species in pca space
+plot_species_pca(rand(allspecies), 2)
+
+# Plot 16 random species with occurrences in pca space and fitted ellipses
+p = Plots.plot([
+    plot_species_pca(rand(allspecies)) for i in 1:16]...
+, size = (1200, 1200))
+savefig(p, "16 species in pca space.png")
+
+# Now control for the density of points in pca space by applying a 0.1 grid
+weightmap = do_map(makeweights(pca1, pca2, 0.1), sa_mask)
+
+p = Plots.plot([
+    plot_species_pca(rand(allspecies), 1.5, weighted = true) for i in 1:16]...
+, size = (1200, 1200))
+savefig(p, "16 species controlling for point density.png")
+
+# fit elliptical niches for all species
+els = fitellipse.(allspecies)
+
+# show patterns of ellipse area
+ares = GeometryBasics.area.(els)
+histogram(ares)
+savefig("histogram of empirical ellipse areas.png")
+Plots.scatter((el -> (el.center_x, el.center_y)).(els), marker_z = ares, ms = 3)
+savefig("PCA centroids of empirical ellipses with area as color")
+
+# repeat the plot with 
+Plots.default(msw = 0, ms = 1, aspect_ratio = 1, seriescolor = cgrad(:Spectral, rev = true), legend = false, colorbar = true)
+el_emp_point = [count(el -> in_ellipse(pt, el), els) for pt in zip(pca1, pca2)]
+Plots.plot(
+    Plots.scatter(pca1, pca2, marker_z = el_emp_point, title = "fitted ellipse overlap"), 
+    Plots.scatter(pca1, pca2, marker_z = diversity[sa_mask], title = "empirical richness") 
+)
+savefig("empirical_ellipse_and_empirical_pca_richness.png")
+
+
+# Create random ellipses with the empirical areas
 ellipses = Ellipse[]
-for harea in allhulls
-    ## replace the line below with this to pick the real grid cells as ellipse centers, rather than a random point
+for harea in ares
+    ## replace the line below with this to pick a random real grid cells as ellipse centers, rather than a random point
     # centerpoint = rand(1:length(pca1))
     # el = rand(Ellipse, pca1[centerpoint], pca2[centerpoint], area = area)
 
@@ -147,12 +173,13 @@ for harea in allhulls
 end
 
 # TODO possibly inside the loop above: grow a range based on the ellipse from a random point 
-
+# Show 50 random ellipses
 p = Plots.scatter(pca1, pca2, mc = :grey, ms = 1, msw = 0, aspect_ratio = 1, label = "")
 for el in rand(ellipses, 50)
     Plots.plot!(p, el, label = "")
 end
 p
+savefig(p, "50 random ellipses.png")
 
 # plot the modelled and empirical richness
 Plots.default(msw = 0, ms = 1, aspect_ratio = 1, seriescolor = cgrad(:Spectral, rev = true), legend = false, colorbar = true)
@@ -162,46 +189,4 @@ Plots.plot(
     Plots.scatter(pca1, pca2, marker_z = diversity[sa_mask], title = "empirical richness") 
 )
 
-el = rand(ellipses)
-els = [in_ellipse(pt, el) for pt in zip(pca1, pca2)]
-b = fill!(copy(sa_mask), false)
-b[sa_mask] .= els
-
-# test fitellipse
-xs = 10randn(100) .+ 4
-ys = xs .+ 3randn(100)
-Plots.scatter(xs, ys)
-Plots.plot!(fit(Ellipse, xs, ys, 2))
-
-# Now try it for a species in pca space
-plot_species_pca(rand(allspecies), 2,)
-
-p = Plots.plot([
-    plot_species_pca(rand(allspecies)) for i in 1:16]...
-, size = (1200, 1200))
-savefig(p, "myplot.png")
-
-# Now control for the number of poitns in the same grid cell
-weightmap = do_map(makeweights(pca1, pca2, 0.1), sa_mask)
-
-p = Plots.plot([
-    plot_species_pca(rand(allspecies), 1.5, weighted = true) for i in 1:16]...
-, size = (1200, 1200))
-savefig(p, "myplot3.png")
-
-# fit ellptical niches for all species
-els = fitellipse.(allspecies)
-
-# show patterns of ellipse area
-ares = GeometryBasics.area.(els)
-histogram(ares)
-Plots.scatter((el -> (el.center_x, el.center_y)).(els), marker_z = ares, ms = 3)
-
-# repeat the plot with 
-Plots.default(msw = 0, ms = 1, aspect_ratio = 1, seriescolor = cgrad(:Spectral, rev = true), legend = false, colorbar = true)
-el_emp_point = [count(el -> in_ellipse(pt, el), els) for pt in zip(pca1, pca2)]
-Plots.plot(
-    Plots.scatter(pca1, pca2, marker_z = el_emp_point, title = "fitted ellipse overlap"), 
-    Plots.scatter(pca1, pca2, marker_z = diversity[sa_mask], title = "empirical richness") 
-)
-savefig("ellipse_richness.png")
+savefig("modelled_ellipse_and_empirical_pca_richness.png")
