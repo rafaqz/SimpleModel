@@ -111,3 +111,25 @@ function fitellipse(speciesname::String, sigma = 2; weighted = false)
     length(xs) < 3 && return Ellipse(0, 0, 0, 0, 0)
     fit(Ellipse, xs, ys, sigma; weight = weighted ? weightmap[allranges[speciesname]] : ones(length(xs)))
 end
+
+# pick a random real grid cells as ellipse centers, rather than a random point
+function pick_ellipse_center(x = pca1, y = pca2, bbox_all = bbox_all; on_real_point = false)    
+    if on_real_point 
+        centerpoint = rand(1:length(x))
+        return(x[centerpoint], y[centerpoint])
+    end
+    rescale(rand(), first(bbox_all)...), rescale(rand(), last(bbox_all)...)
+end
+
+function sample_ellipse(harea = 1; max_iter = 1000, on_real_point = false)
+    el = Ellipse(0,0,0,0,0)
+    harea == 0 && return el
+    ovrlp = 0
+    failsafe = 0
+    while ovrlp < 0.8 && (failsafe += 1) < max_iter
+        el = rand(Ellipse, pick_ellipse_center(;on_real_point)..., area = harea)
+        ovrlp = overlap(el, chull_all) 
+    end
+    failsafe == max_iter && @show harea
+    el
+end

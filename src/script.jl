@@ -151,26 +151,12 @@ Plots.plot(
     Plots.scatter(pca1, pca2, marker_z = el_emp_point, title = "fitted ellipse overlap"), 
     Plots.scatter(pca1, pca2, marker_z = diversity[sa_mask], title = "empirical richness") 
 )
-savefig("empirical_ellipse_and_empirical_pca_richness.png")
+savefig("figures/empirical_ellipse_and_empirical_pca_richness.png")
 
 
+  
 # Create random ellipses with the empirical areas
-ellipses = Ellipse[]
-for harea in ares
-    ## replace the line below with this to pick a random real grid cells as ellipse centers, rather than a random point
-    # centerpoint = rand(1:length(pca1))
-    # el = rand(Ellipse, pca1[centerpoint], pca2[centerpoint], area = area)
-
-    el = rand(Ellipse, xlims = first(bbox_all), ylims = last(bbox_all), area = harea)
-    ovrlp = harea != 0 ? overlap(el, chull_all) : 1
-    failsafe = 0
-    while ovrlp < 0.8 && (failsafe += 1) < 1000 
-        el = rand(Ellipse, xlims = first(bbox_all), ylims = last(bbox_all), area = harea)
-        ovrlp = harea != 0 ? overlap(el, chull_all) : 1
-    end
-    failsafe == 1000 && @show harea
-    push!(ellipses, el)
-end
+ellipses = [sample_ellipse(harea; on_real_point = true) for harea in ares]
 
 # TODO possibly inside the loop above: grow a range based on the ellipse from a random point 
 # Show 50 random ellipses
@@ -190,3 +176,5 @@ Plots.plot(
 )
 
 savefig("modelled_ellipse_and_empirical_pca_richness.png")
+Plots.heatmap(do_map(el_emp_point,sa_mask), color = cgrad(:Spectral, rev = true))
+Plots.heatmap(do_map(elpoint,sa_mask), color = cgrad(:Spectral, rev = true))
