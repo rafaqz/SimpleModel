@@ -13,7 +13,7 @@ include("simplemodel.jl")
 
 ###--- First we load all the data
 
-datadir = "/Users/Michael/Library/CloudStorage/Dropbox/Arbejde/Data"
+datadir = "/Users/cvg147/Library/CloudStorage/Dropbox/Arbejde/Data"
 
 obj = try
     JLSO.load(joinpath(datadir, "processed_objects.jls"))
@@ -28,14 +28,14 @@ catch
     Plots.plot(bioclim_sa.bio1)
 
     ## get the PCA
-    pca1, pca2, model = do_pca(bioclim_sa, sa_mask)
+    pca1, pca2, loads = do_pca(bioclim_sa, sa_mask)
 
     # and convert the results to raster
     pca_maps = RasterStack((pca1=do_map(pca1, sa_mask), pca2=do_map(pca2, sa_mask)))
 
     # and visualize
     Plots.plot(pca_maps)
-    biplot(pca1, pca2, model, string.(names(bioclim_sa)))
+    biplot(pca1, pca2, loads, string.(names(bioclim_sa)))
 
     # Get the bird data (this takes time)
     sa_geoms = loadranges("Birds", 5, sa_mask, "/Users/cvg147/Library/CloudStorage/Dropbox/Arbejde/Data")

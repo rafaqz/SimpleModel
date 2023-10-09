@@ -11,6 +11,38 @@ using Shapefile
 
 # Let's load the environment data
 
+# Find the right rotation for the PCA - copied from factorloadingmatrices (varimax)
+function vmax(A::AbstractMatrix{TA}; gamma = 1.0, minit = 20, maxit = 1000,
+    reltol = 1e-12) where TA
+    d, m = size(A)
+    m == 1 && return A
+    # Warm up step: start with a good initial orthogonal matrix T by SVD and QR
+    T = Matrix{TA}(I, m, m)
+    B = A * T
+    L,_,M = svd(A' * (d*B.^3 - gamma*B * Diagonal(sum(B.^2, dims = 1)[:])))
+    T = L * M'
+    if norm(T - Matrix{TA}(I, m, m)) < reltol
+        T,_ = qr(randn(m,m)).QT
+        B = A * T
+    end
+
+    # Iteration step: get better T to maximize the objective (as described in Factor Analysis book)
+    D = 0
+    for k in 1:maxit
+        Dold = D
+        L,s,M = svd(A' * (d*B.^3 - gamma*B * Diagonal(sum(B.^2, dims = 1)[:])))
+        T = L * M'
+        D = sum(s)
+        B = A * T
+        if (abs(D - Dold)/D < reltol) && k >= minit
+            break
+        end
+    end
+    return T
+end
+
+
+
 function prepare_environment(datadir)
     ENV["RASTERDATASOURCES_PATH"] = joinpath(datadir, "Rasterdatasources")
     # datadir = "/home/raf/Data/Biodiversity/Distributions"
@@ -37,8 +69,9 @@ function do_pca(bioclim_sa, sa_mask)
 
     model = fit(PCA, big_mat; maxoutdim=2)
     pred = MultivariateStats.transform(model, big_mat)
+    pred2 = -(pred' * vmax(loadings(model))) # the minus here and below are just a transformation to have high values top right
 
-    pred[1, :], pred[2, :], model
+    pred2[:, 1], pred2[:, 2], -(loadings(model) * vmax(loadings(model)))
 end
 
 # Load the bird shapefiles and pick the ones in South America

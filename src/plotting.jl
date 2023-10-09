@@ -7,11 +7,11 @@ using GeoInterfaceRecipes
 
 # visualize a PCA biplot
 
-function biplot(pca1, pca2, model, labels = [""])
+function biplot(pca1, pca2, loadings, labels = [""])
     p = GLMakie.scatter(collect(zip(pca1, pca2)); color=(:grey, 0.5))
     for i in 1:19
-        GLMakie.lines!([(0,0), 15 .* (projection(model)[i,:]...,)], color = :red)
-        GLMakie.text!((15 .* projection(model)[i,:])..., text = labels[i])
+        GLMakie.lines!([(0,0), 5 .* (loadings[i,:]...,)], color = :red)
+        GLMakie.text!((5 .* loadings[i,:])..., text = labels[i])
     end
     p
 end
@@ -74,7 +74,7 @@ function plot_species_pca(speciesname, sigma = 2; weighted = false)
     @show speciesname
     xs, ys = get_climate(speciesname)
     length(xs) < 2 && return(Plots.scatter(pca1, pca2, ms = 1, mc = :grey, msw = 0, label = "", title = speciesname, aspect_ratio = 1))
-    el = fitellipse(xs, ys, sigma; weight = weighted ? getweights(xs, ys) : ones(length(xs)))
+    el = fit(Ellipse, xs, ys, sigma; weight = weighted ? getweights(xs, ys) : ones(length(xs)))
     p = Plots.scatter(pca1, pca2, ms = 1, mc = :grey, msw = 0, label = "", title = speciesname, aspect_ratio = 1)
     Plots.scatter!(p, xs, ys, ms = 2, mc = :red, msw = 0, label = "occurrences")
     Plots.plot!(p, el, color = :blue, lw = 1, label = "niche")
