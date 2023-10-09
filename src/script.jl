@@ -193,7 +193,7 @@ savefig(p, "myplot3.png")
 els = fitellipse.(allspecies)
 
 # show patterns of ellipse area
-ares = area.(els)
+ares = GeometryBasics.area.(els)
 histogram(ares)
 Plots.scatter((el -> (el.center_x, el.center_y)).(els), marker_z = ares, ms = 3)
 
