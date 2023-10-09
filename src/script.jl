@@ -52,7 +52,8 @@ pca1, pca2, pca_maps, bioclim_sa, sa_mask, allranges, allspecies = obj[:obj]
 
 # Count total diversity
 diversity = reduce(+, allranges)
-Plots.plot(diversity)
+Plots.heatmap(diversity, color = cgrad(:Spectral, rev = true))
+savefig("figures/empirical_richness.png")
 
 
 # Plot the diversity in climate space
@@ -140,9 +141,9 @@ els = fitellipse.(allspecies)
 # show patterns of ellipse area
 ares = GeometryBasics.area.(els)
 histogram(ares)
-savefig("histogram of empirical ellipse areas.png")
+savefig("figures/histogram of empirical ellipse areas.png")
 Plots.scatter((el -> (el.center_x, el.center_y)).(els), marker_z = ares, ms = 3)
-savefig("PCA centroids of empirical ellipses with area as color")
+savefig("figures/PCA centroids of empirical ellipses with area as color")
 
 # repeat the plot with 
 Plots.default(msw = 0, ms = 1, aspect_ratio = 1, seriescolor = cgrad(:Spectral, rev = true), legend = false, colorbar = true)
@@ -175,6 +176,10 @@ Plots.plot(
     Plots.scatter(pca1, pca2, marker_z = diversity[sa_mask], title = "empirical richness") 
 )
 
-savefig("modelled_ellipse_and_empirical_pca_richness.png")
+savefig("figures/modelled_ellipse_and_empirical_pca_richness.png")
+
 Plots.heatmap(do_map(el_emp_point,sa_mask), color = cgrad(:Spectral, rev = true))
+savefig("figures/richness_on_empirical_ellipses.png")
+
 Plots.heatmap(do_map(elpoint,sa_mask), color = cgrad(:Spectral, rev = true))
+savefig("figures/richness_on_random_ellipses.png")
