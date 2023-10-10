@@ -128,7 +128,10 @@ p = Plots.plot([
 savefig(p, "16 species in pca space.png")
 
 # Now control for the density of points in pca space by applying a 0.1 grid
-weightmap = do_map(makeweights(pca1, pca2, 0.1), sa_mask)
+# First map the options, e.g. binsizes from 0.1 to 0.4
+map_binsize(binsize) = Plots.heatmap(1 ./ do_map(makeweights(env.pca1, env.pca2, binsize), env.mask), color = cgrad(:Spectral, rev = true), title = "binsize = $binsize")
+Plots.plot([map_binsize(bs) for bs in 0.1:0.1:0.4]..., size = (800, 800))
+savefig("figures/binsizes.png")
 
 p = Plots.plot([
     plot_species_pca(rand(allspecies), 1.5, weighted = true) for i in 1:16]...
