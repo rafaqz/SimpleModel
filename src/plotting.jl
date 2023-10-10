@@ -17,26 +17,26 @@ function biplot(pca1, pca2, loadings, labels = [""])
 end
 
 # This plots the distribution of a random species on the map
-function plot_distribution(species, mask = sa_mask, ranges = allranges)
-    Plots.plot(mask, fill = :grey)
-    Plots.plot!(ranges[At(species)])
+function plot_distribution(speciesname, spec::Species, env::Environment)
+    Plots.plot(env.mask, fill = :grey)
+    Plots.plot!(spec.ranges[At(speciesname)])
 end
 
 # Creates two side-by-side plots, one in geographic space, the other in climate space
 # Shows the occurrence points of all the species defined by speciesnames
-function plot_species(speciesnames; mask = sa_mask, pca1 = pca1, pca2 = pca2, pca_maps = pca_maps, allranges = allranges)
+function plot_species(speciesnames, spec::Species, env::Environment)
     f = Figure(resolution = (1500, 700))
     a = Axis(f[1,1], aspect = DataAspect())
     b = Axis(f[1,2], aspect = DataAspect())
-    Makie.plot!(a, mask, colormap = "Greys")
-    Makie.scatter!(b, collect(zip(pca1, pca2)); markersize = 0.1, color=(:grey, 0.5))
+    Makie.plot!(a, env.mask, colormap = "Greys")
+    Makie.scatter!(b, collect(zip(env.pca1, env.pca2)); markersize = 0.1, color=(:grey, 0.5))
     colsize!(f.layout, 1, Auto(0.73))
-    rich = fill(NaN, dims(sa_mask))
+    rich = fill(NaN, dims(env.mask))
 
-    for (i, spec) in enumerate(speciesnames)
-        species_mask = allranges[At(spec)]
+    for (i, species) in enumerate(speciesnames)
+        species_mask = spec.ranges[At(species)]
         rich[species_mask] .= i
-        Makie.scatter!(b, pca_maps.pca1[species_mask], pca_maps.pca2[species_mask]; 
+        Makie.scatter!(b, env.pca_maps.pca1[species_mask], env.pca_maps.pca2[species_mask]; 
             markersize = 0.2, label = spec,
             colormap=(:tab10, 0.5), color=i, colorrange=(1, 10)
         )
@@ -52,30 +52,29 @@ end
 
 
 # Overplot some points on the pca background
-function overplot_pca_space(points, color; pca1=pca1, pca2=pca2)
+function overplot_pca_space(points, color, env::Environment)
     p = Figure()
     a = Axis(p[1,1], aspect = DataAspect())
-    Makie.scatter!(a, collect(zip(pca1, pca2)); markersize = 0.3, color=(:grey, 0.5))
+    Makie.scatter!(a, collect(zip(env.pca1, env.pca2)); markersize = 0.3, color=(:grey, 0.5))
     Makie.scatter!(a, points; markersize = 4, color = color, label = "rangesizes", colormap = Reverse(:Spectral))
     Makie.Colorbar(p[1,2], colormap = Reverse(:Spectral))
     p
 end
 
 # Overplot some points on the map of south america
-function overplot_geo_space(points, col; mask = sa_mask)
+function overplot_geo_space(points, col, env::Environment)
     f = Figure()
     a = Axis(f[1,1], aspect = DataAspect())
-    Makie.plot!(a, mask, colormap = :Greys)
+    Makie.plot!(a, env.mask, colormap = :Greys)
     Makie.scatter!(points, color = col)
     f
 end
 
-function plot_species_pca(speciesname, sigma = 2; weighted = false)
-    @show speciesname
-    xs, ys = get_climate(speciesname)
-    length(xs) < 2 && return(Plots.scatter(pca1, pca2, ms = 1, mc = :grey, msw = 0, label = "", title = speciesname, aspect_ratio = 1))
-    el = fit(Ellipse, xs, ys, sigma; weight = weighted ? weightmap[allranges[At(speciesname)]] : ones(length(xs)))
-    p = Plots.scatter(pca1, pca2, ms = 1, mc = :grey, msw = 0, label = "", title = speciesname, aspect_ratio = 1)
+function plot_species_pca(speciesname, spec::Species, env::Environment, sigma = 2; weightmap = nothing)
+    xs, ys = get_climate(speciesname, spec, env)
+    length(xs) < 2 && return(Plots.scatter(env.pca1, env.pca2, ms = 1, mc = :grey, msw = 0, label = "", title = speciesname, aspect_ratio = 1))
+    el = fit(Ellipse, xs, ys, sigma; weight = !isnothing(weightmap) ? weightmap[spec.ranges[At(speciesname)]] : ones(length(xs)))
+    p = Plots.scatter(env.pca1, env.pca2, ms = 1, mc = :grey, msw = 0, label = "", title = speciesname, aspect_ratio = 1)
     Plots.scatter!(p, xs, ys, ms = 2, mc = :red, msw = 0, label = "occurrences")
     Plots.plot!(p, el, color = :blue, lw = 1, label = "niche")
     p

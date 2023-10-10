@@ -30,7 +30,7 @@ Plots.histogram(es)
 # plot a species on the density of points in climate space
 background = fit(Histogram, (pca1, pca2),  (-10:0.3:10, -10:0.3:10))
 spec = rand(allspecies)
-x,y = get_climate(allranges[At(spec)])
+x,y = get_climate(allranges[At(spec)], env)
 sp = fit(Histogram, (x,y),  (-10:0.3:10, -10:0.3:10))
 Plots.plot(Plots.plot(sp, aspect_ratio = 1), Plots.plot(background, aspect_ratio = 1), layout = 2)
 
@@ -108,3 +108,5 @@ Makie.save("pca.png", p)
 
 
 # Now rasterise these into the PCAs? 
+
+

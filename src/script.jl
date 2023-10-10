@@ -4,72 +4,48 @@ using Rasters
 using JLSO
 using GeoInterface; const GI = GeoInterface
 using LibGEOS
-using ConcaveHull
 
-
+include("objects.jl")
 include("plotting.jl")
 include("ellipse.jl")
 include("simplemodel.jl")
 
-###--- First we load all the data
+
+###--- First we load all the data into two objects. This takes a while if first time, 
+# so we use JLSO to cache
 
 datadir = "/Users/cvg147/Library/CloudStorage/Dropbox/Arbejde/Data"
-
 obj = try
     JLSO.load(joinpath(datadir, "processed_objects.jls"))
 catch
     include("prepare_data.jl")
-
-    ## Get the environmental data
-    bioclim_sa = prepare_environment(datadir)
-    sa_mask = boolmask(bioclim_sa.bio15)
-
-    # and visualize
-    Plots.plot(bioclim_sa.bio1)
-
-    ## get the PCA
-    pca1, pca2, loads = do_pca(bioclim_sa, sa_mask)
-
-    # and convert the results to raster
-    pca_maps = RasterStack((pca1=do_map(pca1, sa_mask), pca2=do_map(pca2, sa_mask)))
-
-    # and visualize
-    Plots.plot(pca_maps)
-    biplot(pca1, pca2, loads, string.(names(bioclim_sa)))
-
-    # Get the bird data (this takes time)
-    sa_geoms = loadranges("Birds", 5, sa_mask, "/Users/cvg147/Library/CloudStorage/Dropbox/Arbejde/Data")
-    # names of all species
-    allspecies = unique(sa_geoms.sci_name)
-    allranges = RasterSeries([get_speciesmask(name; geoms = sa_geoms, mask = sa_mask) for name in allspecies], (; name = allspecies))
-    obj = :obj => (pca1, pca2, pca_maps, bioclim_sa, sa_mask, allranges, allspecies)
-    JLSO.save(joinpath(datadir, "processed_objects.jls"), obj)
-    Dict(obj)
+    obj = prepare_data(datadir)
 end
+spec = obj[:spec] # see the "objects.jl" file for an explanation of these two objects
+env = obj[:env]
 
-pca1, pca2, pca_maps, bioclim_sa, sa_mask, allranges, allspecies = obj[:obj]
 ###--- Exploratory data analysis
 
 # Count total diversity
-diversity = reduce(+, allranges)
+diversity = reduce(+, spec.ranges)
 Plots.heatmap(diversity, color = cgrad(:Spectral, rev = true))
 savefig("figures/empirical_richness.png")
 
 
 # Plot the diversity in climate space
 f = Figure()
-a, s = Makie.scatter(f[1,1], collect(zip(pca1, pca2)); markersize = 0.1, color = diversity[sa_mask], colormap = cgrad(:Spectral, rev = true))
+a, s = Makie.scatter(f[1,1], collect(zip(env.pca1, env.pca2)); markersize = 0.1, color = diversity[env.mask], colormap = cgrad(:Spectral, rev = true))
 Colorbar(f[1,2],s)
 display(f)
 
 
 # plot some random species and look at their distribution
-specs = rand(allspecies, 5)
-plot_species(specs)
+randspecs = rand(spec.names, 5)
+plot_species(randspecs, spec, env)
 
 
 ## how are ranges shaped?
-cors, xrange, yrange = find_range_shapes(allspecies)
+cors, xrange, yrange = find_range_shapes(spec, env)
 histogram(cors)
 Plots.scatter(xrange, yrange)
 
@@ -77,26 +53,26 @@ Plots.scatter(xrange, yrange)
 ###--- Patterns of range and niche size in climate space
 
 # get environmental centroids and range sizes for all species
-allcentroids = vec(get_centroid.(allranges))
-ranges = vec(count.(allranges))
+allcentroids = vec(get_centroid.(spec.ranges, (env,)))
+rangesizes = vec(count.(spec.ranges))
 
 # This figure shows the geographic range size of ranges on the environmental centroids (in environment spaecs)
-overplot_pca_space(allcentroids, ranges)
+overplot_pca_space(allcentroids, rangesizes, env)
 
 # get hull area for all species
-allhulls = hullarea.(allspecies)
+allhulls = [hullarea(sp, spec, env) for sp in spec.names]
 
 # show the mean size of the climatic range in environmental space
-overplot_pca_space(allcentroids, allhulls)
+overplot_pca_space(allcentroids, allhulls, env)
 
 # get the geographical centroids for all species
-gc = geocentroids.(allspecies)
+gc = geocentroids.(spec.names, (spec,))
 
 # plot the location of all the centroids on the map
-overplot_geo_space(gc, ranges; mask = sa_mask)
+overplot_geo_space(gc, rangesizes, env)
 
 # divide the range sizes into quantiles for plotting
-rangequants = asquantile(ranges, 4)
+rangequants = asquantile(rangesizes, 4)
 
 # and plot them
 f = Figure()
@@ -104,28 +80,19 @@ aspect = DataAspect()
 axs = [Axis(f[1,1]; aspect), Axis(f[2,1]; aspect), Axis(f[1,2]; aspect), Axis(f[2,2]; aspect)]
 for i in 1:4
     inds = findall(==(i), rangequants)
-    Makie.plot!(axs[i], sa_mask, colormap = :Greys)
+    Makie.plot!(axs[i], env.mask, colormap = :Greys)
     Makie.scatter!(axs[i], gc[inds], markersize = 2)
 end
 f
 
-# Find the convex and concave hulls around all the points in pca space
-## chull_all = LibGEOS.convexhull(points_to_geo(pca1, pca2))
-bbox_all = (extrema(pca1), extrema(pca2))
-cc = concave_hull(ConcaveHull.KDTree(vcat(pca1', pca2'), reorder = false), 40)
-chull_all = GI.Polygon([GI.LinearRing([cc.vertices; [first(cc.vertices)]])])
-# I am currently overwriting with a concave hull to see the effect
-# This is the hull around all of the occupied space
-
-
 # Now fit an ellipse to a species in pca space
-plot_species_pca(rand(allspecies), 2)
+plot_species_pca(rand(spec.names), spec, env, 2)
 
 # Plot 16 random species with occurrences in pca space and fitted ellipses
 p = Plots.plot([
-    plot_species_pca(rand(allspecies)) for i in 1:16]...
+    plot_species_pca(rand(spec.names), spec, env, 2) for i in 1:16]...
 , size = (1200, 1200))
-savefig(p, "16 species in pca space.png")
+savefig(p, "figures/16 species in pca space.png")
 
 # Now control for the density of points in pca space by applying a 0.1 grid
 # First map the options, e.g. binsizes from 0.1 to 0.4
@@ -133,56 +100,62 @@ map_binsize(binsize) = Plots.heatmap(1 ./ do_map(makeweights(env.pca1, env.pca2,
 Plots.plot([map_binsize(bs) for bs in 0.1:0.1:0.4]..., size = (800, 800))
 savefig("figures/binsizes.png")
 
+# we conclude that we need one at 0.2
+const weightmap = do_map(makeweights(env.pca1, env.pca2, 0.2), env.mask)
+
+
+
 p = Plots.plot([
-    plot_species_pca(rand(allspecies), 1.5, weighted = true) for i in 1:16]...
+    plot_species_pca(rand(spec.names), spec, env, 1.5; weightmap) for i in 1:16]...
 , size = (1200, 1200))
-savefig(p, "16 species controlling for point density.png")
+savefig(p, "figures/16 species controlling for point density.png")
 
 # fit elliptical niches for all species
-els = fitellipse.(allspecies)
+emp_ellipses = [fitellipse(name, spec, env, 2) for name in spec.names]
 
 # show patterns of ellipse area
-ares = GeometryBasics.area.(els)
+ares = GeometryBasics.area.(emp_ellipses)
 histogram(ares)
 savefig("figures/histogram of empirical ellipse areas.png")
-Plots.scatter((el -> (el.center_x, el.center_y)).(els), marker_z = ares, ms = 3)
+Plots.scatter((el -> (el.center_x, el.center_y)).(emp_ellipses), marker_z = ares, ms = 3)
 savefig("figures/PCA centroids of empirical ellipses with area as color")
 
-# repeat the plot with 
+
+# repeat the plot with the 
 Plots.default(msw = 0, ms = 1, aspect_ratio = 1, seriescolor = cgrad(:Spectral, rev = true), legend = false, colorbar = true)
-el_emp_point = [count(el -> in_ellipse(pt, el), els) for pt in zip(pca1, pca2)]
+el_emp_point = [count(el -> in_ellipse(pt, el), emp_ellipses) for pt in zip(env.pca1, env.pca2)]
 Plots.plot(
-    Plots.scatter(pca1, pca2, marker_z = el_emp_point, title = "fitted ellipse overlap"), 
-    Plots.scatter(pca1, pca2, marker_z = diversity[sa_mask], title = "empirical richness") 
+    Plots.scatter(env.pca1, env.pca2, marker_z = el_emp_point, title = "fitted ellipse overlap"), 
+    Plots.scatter(env.pca1, env.pca2, marker_z = diversity[env.mask], title = "empirical richness") 
 )
 savefig("figures/empirical_ellipse_and_empirical_pca_richness.png")
 
 
   
 # Create random ellipses with the empirical areas
-ellipses = [sample_ellipse(harea; on_real_point = true) for harea in ares]
+rand_ellipses = [sample_ellipse(harea, env; on_real_point = true) for harea in ares]
 
 # TODO possibly inside the loop above: grow a range based on the ellipse from a random point 
 # Show 50 random ellipses
-p = Plots.scatter(pca1, pca2, mc = :grey, ms = 1, msw = 0, aspect_ratio = 1, label = "")
-for el in rand(ellipses, 50)
+p = Plots.scatter(env.pca1, env.pca2, mc = :grey, ms = 1, msw = 0, aspect_ratio = 1, label = "")
+for el in rand(rand_ellipses, 50)
     Plots.plot!(p, el, label = "")
 end
 p
-savefig(p, "50 random ellipses.png")
+savefig(p, "figures/50 random ellipses.png")
 
 # plot the modelled and empirical richness
 Plots.default(msw = 0, ms = 1, aspect_ratio = 1, seriescolor = cgrad(:Spectral, rev = true), legend = false, colorbar = true)
-elpoint = [count(el -> in_ellipse(pt, el), ellipses) for pt in zip(pca1, pca2)]
+elpoint = [count(el -> in_ellipse(pt, el), rand_ellipses) for pt in zip(env.pca1, env.pca2)]
 Plots.plot(
-    Plots.scatter(pca1, pca2, marker_z = elpoint, title = "ellipse overlap"), 
-    Plots.scatter(pca1, pca2, marker_z = diversity[sa_mask], title = "empirical richness") 
+    Plots.scatter(env.pca1, env.pca2, marker_z = elpoint, title = "ellipse overlap"), 
+    Plots.scatter(env.pca1, env.pca2, marker_z = diversity[env.mask], title = "empirical richness") 
 )
 
 savefig("figures/modelled_ellipse_and_empirical_pca_richness.png")
 
-Plots.heatmap(do_map(el_emp_point,sa_mask), color = cgrad(:Spectral, rev = true))
+Plots.heatmap(do_map(el_emp_point, env.mask), color = cgrad(:Spectral, rev = true))
 savefig("figures/richness_on_empirical_ellipses.png")
 
-Plots.heatmap(do_map(elpoint,sa_mask), color = cgrad(:Spectral, rev = true))
+Plots.heatmap(do_map(elpoint, env.mask), color = cgrad(:Spectral, rev = true))
 savefig("figures/richness_on_random_ellipses.png")

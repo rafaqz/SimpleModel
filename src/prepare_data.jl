@@ -2,12 +2,13 @@ using Rasters
 using RasterDataSources
 using MultivariateStats
 using DataFrames
-using ArchGDAL
 using GeoInterface; const GI = GeoInterface
 using LibGEOS
-using Stencils
-using Extents
 using Shapefile
+using ConcaveHull
+
+include("objects.jl")
+include("plotting.jl")
 
 # Let's load the environment data
 
@@ -40,8 +41,6 @@ function vmax(A::AbstractMatrix{TA}; gamma = 1.0, minit = 20, maxit = 1000,
     end
     return T
 end
-
-
 
 function prepare_environment(datadir)
     ENV["RASTERDATASOURCES_PATH"] = joinpath(datadir, "Rasterdatasources")
@@ -87,3 +86,47 @@ function loadranges(data::String, batches::Int, mask, datadir)
     end)
 end
 
+# a function to rasterize a species by name
+function get_speciesmask(name, geoms, mask)
+    ret = reduce(.|, map(findall(==(name), geoms.sci_name)) do i
+        boolmask(geoms.geometry[i]; to = mask, boundary = :touches) .& mask
+    end)
+    rebuild(ret; name = name)
+end
+
+
+function prepare_data(datadir; doplots = false)
+    ## Get the environmental data
+    bioclim_sa = prepare_environment(datadir)
+    sa_mask = boolmask(bioclim_sa.bio15)
+
+    # and visualize
+    doplots && Plots.plot(bioclim_sa.bio1)
+
+    ## get the PCA
+    pca1, pca2, loads = do_pca(bioclim_sa, sa_mask)
+
+    # and convert the results to raster
+    pca_maps = RasterStack((pca1=do_map(pca1, sa_mask), pca2=do_map(pca2, sa_mask)))
+
+    # and visualize
+    doplots && Plots.plot(pca_maps)
+    doplots && biplot(pca1, pca2, loads, string.(names(bioclim_sa)))
+
+    # Get the bird data (this takes time)
+    sa_geoms = loadranges("Birds", 5, sa_mask, "/Users/cvg147/Library/CloudStorage/Dropbox/Arbejde/Data")
+    # names of all species
+    allspecies = unique(sa_geoms.sci_name)
+    allranges = RasterSeries([get_speciesmask(name, sa_geoms, sa_mask) for name in allspecies], (; name = allspecies))
+    inds = collect(Iterators.product(1:size(sa_mask, 1), 1:size(sa_mask, 2)))[sa_mask]
+    
+    bbox = (extrema(pca1), extrema(pca2))
+    cc = concave_hull(ConcaveHull.KDTree(vcat(pca1', pca2'), reorder = false), 40)
+    chull = GI.Polygon([GI.LinearRing([cc.vertices; [first(cc.vertices)]])])
+    
+    env = Environment(pca1, pca2, pca_maps, sa_mask, inds, bbox, chull)
+    spec = Species(allranges, allspecies)
+    obj = (:spec => spec, :env => env)
+    JLSO.save(joinpath(datadir, "processed_objects.jls"), obj...)
+    Dict(obj)
+end

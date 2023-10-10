@@ -25,7 +25,7 @@ function growrange(start, domain)
     georange
 end
 
-function random_point_on_ellipse(el::Ellipse, x = pca1, y = pca2; maxiter = 1e6)
+function random_point_on_ellipse(el::Ellipse, x, y; maxiter = 1e6)
     iter = 0
     while (iter += 1) < maxiter
         pt = rand(1:length(x))
@@ -33,16 +33,14 @@ function random_point_on_ellipse(el::Ellipse, x = pca1, y = pca2; maxiter = 1e6)
     end
     error("Did not find a point on the ellipse in $maxiter tries")
 end
+random_point_on_ellipse(el::Ellipse, env::Environment; maxiter = 1e6) = random_point_on_ellipse(el, env.pca1, env.pca2; maxiter)
 
-map_ellipse(el::Ellipse, pca1=pca1, pca2=pca2, mask = sa_mask) = do_map([in_ellipse(pt, el) for pt in zip(pca1, pca2)], mask; missingval = false)
+map_ellipse(el::Ellipse, env::Environment) = do_map([in_ellipse(pt, el) for pt in zip(env.pca1, env.pca2)], env.mask; missingval = false)
 
-const sa_inds = collect(Iterators.product(1:size(sa_mask, 1), 1:size(sa_mask, 2)))[sa_mask]
-
-function make_continuous_range(el, pca1=pca1, pca2=pca2, mask=sa_mask)
-    domain = map_ellipse(el)
-    i = random_point_on_ellipse(el, pca1, pca2)
+function make_continuous_range(el, env::Environment)
+    domain = map_ellipse(el, env)
+    i = random_point_on_ellipse(el, env.pca1, env.pca2)
     pt = sa_inds[i]
-    @show i, pt
     growrange(pt, domain)
 end
 
@@ -51,6 +49,6 @@ newdiv = reduce(+, make_continuous_range(el) for el in els)
 
 myel = rand(els)
 Plots.plot(
-    Plots.plot(map_ellipse(myel)),
-    Plots.plot(make_continuous_range(myel))
+    Plots.plot(map_ellipse(mye, env)),
+    Plots.plot(make_continuous_range(myel, env))
 )
