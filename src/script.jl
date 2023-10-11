@@ -8,6 +8,7 @@ include("plotting.jl")
 include("ellipse.jl")
 include("simplemodel.jl")
 
+save_figures = false
 
 ###--- First we load all the data into two objects. This takes a while if first time, 
 # so we use JLSO to cache
@@ -90,13 +91,13 @@ plot_species_pca(rand(spec.names), spec, env, 2)
 p = Plots.plot([
     plot_species_pca(rand(spec.names), spec, env, 2) for i in 1:16]...
 , size = (1200, 1200))
-savefig(p, "figures/16 species in pca space.png")
+save_figures && savefig(p, "figures/16 species in pca space.png")
 
 # Now control for the density of points in pca space by applying a 0.1 grid
 # First map the options, e.g. binsizes from 0.1 to 0.4
 map_binsize(binsize) = Plots.heatmap(1 ./ do_map(makeweights(env.pca1, env.pca2, binsize), env.mask), color = cgrad(:Spectral, rev = true), title = "binsize = $binsize")
 Plots.plot([map_binsize(bs) for bs in 0.1:0.1:0.4]..., size = (800, 800))
-savefig("figures/binsizes.png")
+save_figures && savefig("figures/binsizes.png")
 
 # we conclude that we need one at 0.2
 const weightmap = do_map(makeweights(env.pca1, env.pca2, 0.2), env.mask)
@@ -104,7 +105,7 @@ const weightmap = do_map(makeweights(env.pca1, env.pca2, 0.2), env.mask)
 p = Plots.plot([
     plot_species_pca(rand(spec.names), spec, env, 1.5; weightmap) for i in 1:16]...
 , size = (1200, 1200))
-savefig(p, "figures/16 species controlling for point density.png")
+save_figures && savefig(p, "figures/16 species controlling for point density.png")
 
 # fit elliptical niches for all species
 emp_ellipses = [fitellipse(name, spec, env, 1.5) for name in spec.names]
@@ -112,9 +113,9 @@ emp_ellipses = [fitellipse(name, spec, env, 1.5) for name in spec.names]
 # show patterns of ellipse area
 ares = GeometryBasics.area.(emp_ellipses)
 histogram(ares)
-savefig("figures/histogram of empirical ellipse areas.png")
+save_figures && savefig("figures/histogram of empirical ellipse areas.png")
 Plots.scatter((el -> (el.center_x, el.center_y)).(emp_ellipses), marker_z = ares, ms = 3)
-savefig("figures/PCA centroids of empirical ellipses with area as color")
+save_figures && savefig("figures/PCA centroids of empirical ellipses with area as color")
 
 
 # repeat the plot with the 
@@ -124,7 +125,7 @@ Plots.plot(
     Plots.scatter(env.pca1, env.pca2, marker_z = el_emp_point, title = "fitted ellipse overlap"), 
     Plots.scatter(env.pca1, env.pca2, marker_z = diversity[env.mask], title = "empirical richness") 
 )
-savefig("figures/empirical_ellipse_and_empirical_pca_richness.png")
+save_figures && savefig("figures/empirical_ellipse_and_empirical_pca_richness.png")
 
   
 # Create random ellipses with the empirical areas
@@ -136,7 +137,7 @@ for el in rand(rand_ellipses, 50)
     Plots.plot!(p, el, label = "")
 end
 p
-savefig(p, "figures/50 random ellipses.png")
+save_figures && savefig(p, "figures/50 random ellipses.png")
 
 # plot the modelled and empirical richness
 Plots.default(msw = 0, ms = 1, aspect_ratio = 1, seriescolor = cgrad(:Spectral, rev = true), legend = false, colorbar = true)
@@ -146,13 +147,13 @@ Plots.plot(
     Plots.scatter(env.pca1, env.pca2, marker_z = diversity[env.mask], title = "empirical richness") 
 )
 
-savefig("figures/modelled_ellipse_and_empirical_pca_richness.png")
+save_figures && savefig("figures/modelled_ellipse_and_empirical_pca_richness.png")
 
 Plots.heatmap(do_map(el_emp_point, env.mask), color = cgrad(:Spectral, rev = true))
-savefig("figures/richness_on_empirical_ellipses.png")
+save_figures && savefig("figures/richness_on_empirical_ellipses.png")
 
 Plots.heatmap(do_map(elpoint, env.mask), color = cgrad(:Spectral, rev = true))
-savefig("figures/richness_on_random_ellipses.png")
+save_figures && savefig("figures/richness_on_random_ellipses.png")
 
 
 ###--- Let's create some random ranges and look at the patterns
@@ -165,13 +166,13 @@ plot_ellipse_patches(rand(eachindex(emp_ellipses)), spec, env, 1.5)
 model_ranges = RasterSeries([make_continuous_range(el, env) for el in emp_ellipses], (; name = spec.names))
 newdiv = reduce(+, model_ranges)
 Plots.heatmap(newdiv, color = cgrad(:Spectral, rev = true))
-savefig("figures/richness from patches in empirical ellipses.png")
+save_figures && savefig("figures/richness from patches in empirical ellipses.png")
 
 # range patches based on randomly placed ellipses (with the right size)
 rand_model_ranges = RasterSeries([make_continuous_range(el, env) for el in rand_ellipses], (; name = spec.names))
 rand_div = reduce(+, rand_model_ranges)
 Plots.heatmap(rand_div, color = cgrad(:Spectral, rev = true))
-savefig("figures/richness from patches in random ellipses.png")
+save_figures && savefig("figures/richness from patches in random ellipses.png")
 
 
 # Find and plot richnes at the 1 degree lat/long scale
@@ -183,7 +184,7 @@ Plots.plot(
     Plots.heatmap(model_coarse, title = "modelled 1 degree richness"),
     Plots.heatmap(emp_coarse, title = "empirical 1 degree richness"), size = (900, 500)
 )
-savefig("figures/coarse richness.png")
+save_figures && savefig("figures/coarse richness.png")
 
 
 
