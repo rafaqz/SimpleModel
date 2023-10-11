@@ -56,8 +56,8 @@ function prepare_environment(datadir)
 
     # Use WorldClim for now for speed
     bioclim = RasterStack(CHELSA{BioClim}; lazy=true)
-    bioclim[X=-89 .. -33, Y=-57 .. 13]
-    # bioclim_sa = Rasters.aggregate(mean, replace_missing(bioclim_sa, NaN), 10)
+    bioclim_sa = bioclim[X=-89 .. -33, Y=-57 .. 13]
+    Rasters.aggregate(mean, replace_missing(bioclim_sa, NaN), 10)
 end
 
 # Fit a PCA model to the climate and extract the two primary components
