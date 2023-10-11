@@ -13,7 +13,7 @@ function add_point!(georange, potentials, pt, domain)
 end
 
 function growrange(start, domain)
-    on_domain(pt, domain) || error("start point not on domain")
+    on_domain(start, domain) || error("start point not on domain")
     georange = fill(false, dims(domain), missingval = false)
     potentials = Set([start])
     failsafe = 0; max_iter = prod(size(domain))
@@ -35,20 +35,25 @@ function random_point_on_ellipse(el::Ellipse, x, y; maxiter = 1e6)
 end
 random_point_on_ellipse(el::Ellipse, env::Environment; maxiter = 1e6) = random_point_on_ellipse(el, env.pca1, env.pca2; maxiter)
 
-map_ellipse(el::Ellipse, env::Environment) = do_map([in_ellipse(pt, el) for pt in zip(env.pca1, env.pca2)], env.mask; missingval = false)
+map_ellipse(el::Ellipse, env::Environment) = do_map([in_ellipse(pt, el) for pt in zip(env.pca1, env.pca2)], env)
 
 function make_continuous_range(el, env::Environment)
     domain = map_ellipse(el, env)
+    GeometryBasics.area(el) == 0 && return domain
     i = random_point_on_ellipse(el, env.pca1, env.pca2)
-    pt = sa_inds[i]
+    pt = env.inds[i]
     growrange(pt, domain)
 end
 
 # TODO weird bug here
-newdiv = reduce(+, make_continuous_range(el) for el in els)
+newdiv = reduce(+, make_continuous_range(el, env) for el in emp_ellipses)
 
 myel = rand(els)
 Plots.plot(
     Plots.plot(map_ellipse(mye, env)),
     Plots.plot(make_continuous_range(myel, env))
 )
+for i in 1:length(emp_ellipses)
+    @show i
+    make_continuous_range(emp_ellipses[i], env)
+end
