@@ -55,7 +55,7 @@ function prepare_environment(datadir)
     # bioclim_sa = Rasters.aggregate(mean, replace_missing(bioclim_sa, NaN), 10)
 
     # Use WorldClim for now for speed
-    bioclim = RasterStack(WorldClim{BioClim}; lazy=true)
+    bioclim = RasterStack(CHELSA{BioClim}; lazy=true)
     bioclim[X=-89 .. -33, Y=-57 .. 13]
     # bioclim_sa = Rasters.aggregate(mean, replace_missing(bioclim_sa, NaN), 10)
 end
