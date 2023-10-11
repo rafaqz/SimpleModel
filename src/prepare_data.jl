@@ -1,11 +1,13 @@
 using Rasters
 using RasterDataSources
+using ArchGDAL
 using MultivariateStats
 using DataFrames
 using GeoInterface; const GI = GeoInterface
 using Extents
 using Shapefile
 using ConcaveHull
+using StatsBase
 
 include("objects.jl")
 include("plotting.jl")
