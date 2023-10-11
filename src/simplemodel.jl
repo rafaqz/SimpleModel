@@ -1,25 +1,11 @@
 
 # Load a shitload of packages
 using Rasters
-using RasterDataSources
-using MultivariateStats
-using Distributions
 using Plots
-using Random
-using StatsBase
-using GLMakie
 using Statistics
-using DataFrames
-using ArchGDAL
-using GeoInterfaceMakie
-using GeoInterfaceRecipes
-using GeometryOps
 using GeometryBasics
-using GeoInterface
+using GeoInterface; const GI = GeoInterface
 using LibGEOS
-using Stencils
-using Extents
-using Shapefile
 
 # Create a raster map from a vector of observations in the right order
 function do_map(x::Vector{T}, mask::Raster) where T <: Number

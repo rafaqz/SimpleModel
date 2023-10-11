@@ -1,3 +1,6 @@
+using Rasters
+using GeoInterface
+
 struct Environment{N <: Number, S <: RasterStack, R <: Raster{Bool}, P <: GeoInterface.Wrappers.Polygon}
     pca1::Vector{N}                         # the first environmental pca axis of two (rotated to both hold equal variance)
     pca2::Vector{N}                         # the second environmental pca axis

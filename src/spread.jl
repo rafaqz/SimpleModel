@@ -1,3 +1,8 @@
+using Rasters
+using Plots
+
+include("objects.jl")
+
 const nbh = Tuple((x,y) for x in -1:1, y in -1:1 if !(x == y == 0))
 
 on_domain(pt, domain) = min(pt...) > 0 && first(pt) <= size(domain, 1) && last(pt) <= size(domain, 2) && domain[pt...]

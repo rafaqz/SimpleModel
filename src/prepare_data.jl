@@ -3,7 +3,7 @@ using RasterDataSources
 using MultivariateStats
 using DataFrames
 using GeoInterface; const GI = GeoInterface
-using LibGEOS
+using Extents
 using Shapefile
 using ConcaveHull
 

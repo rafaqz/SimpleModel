@@ -2,8 +2,6 @@ using Plots
 using GLMakie
 using Rasters
 using JLSO
-using GeoInterface; const GI = GeoInterface
-using LibGEOS
 
 include("objects.jl")
 include("plotting.jl")
@@ -103,8 +101,6 @@ savefig("figures/binsizes.png")
 # we conclude that we need one at 0.2
 const weightmap = do_map(makeweights(env.pca1, env.pca2, 0.2), env.mask)
 
-
-
 p = Plots.plot([
     plot_species_pca(rand(spec.names), spec, env, 1.5; weightmap) for i in 1:16]...
 , size = (1200, 1200))
@@ -130,12 +126,10 @@ Plots.plot(
 )
 savefig("figures/empirical_ellipse_and_empirical_pca_richness.png")
 
-
   
 # Create random ellipses with the empirical areas
 rand_ellipses = [sample_ellipse(harea, env; on_real_point = true) for harea in ares]
 
-# TODO possibly inside the loop above: grow a range based on the ellipse from a random point 
 # Show 50 random ellipses
 p = Plots.scatter(env.pca1, env.pca2, mc = :grey, ms = 1, msw = 0, aspect_ratio = 1, label = "")
 for el in rand(rand_ellipses, 50)

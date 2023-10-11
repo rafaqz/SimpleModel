@@ -1,5 +1,9 @@
 using Random
 using RecipesBase
+using Statistics
+using LinearAlgebra
+import StatsBase
+import GeometryBasics
 
 # A basic Ellipse struct
 struct Ellipse
@@ -57,13 +61,10 @@ Random.rand(::Type{Ellipse}; xlims=(0,1), ylims=(0,1), area = 1, lengthfun = tru
 
 GeometryBasics.area(el::Ellipse) = el.length * el.width * π
 
-using Statistics
-using LinearAlgebra
-
 # possibly use a covariance matrix weighted
 # by the 1 / number of point occurrences in
 # the same pca grid cell?
-import StatsBase
+
 function StatsBase.fit(::Type{Ellipse}, xs, ys, sigma = 2; weight = ones(length(xs)))
     evals, evecs = eigen(cov([xs ys], weights(weight)))
     a, b = sigma .* sqrt.(evals)
