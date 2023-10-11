@@ -81,7 +81,7 @@ function loadranges(data::String, batches::Int, mask, datadir)
         df = DataFrame(Shapefile.Table(sf))
         filter(df) do row
             ext = GI.calc_extent(GI.trait(row.geometry), row.geometry)
-            Extents.intersects(ext, Extents.extent(mask))
+            Extents.intersects(ext, Extents.extent(mask)) && row.origin == 1 && row.seasonal in 1:2 && row.presence in 1:4
         end
     end)
 end
