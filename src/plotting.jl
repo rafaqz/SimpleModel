@@ -79,6 +79,18 @@ function plot_species_pca(speciesname, spec::Species, env::Environment, sigma = 
     p
 end
 
+function plot_ellipse_patches(myel::Int, spec::Species, env::Environment, elsize = 2)
+    Plots.plot(
+        Plots.heatmap(first(env.pca_maps), title = "temp"),
+        Plots.heatmap(last(env.pca_maps), title = "precip"),
+        Plots.plot(spec.ranges[myel], title = "actual range"),
+        plot_species_pca(spec.names[myel], spec, env, elsize; weightmap), 
+        Plots.plot(map_ellipse(emp_ellipses[myel], env), title = "full ellipse range"),
+        Plots.plot(make_continuous_range(emp_ellipses[myel], env), title = "sampled patch"),
+        size = (800, 1000), layout = (3,2)
+    )
+end
+
 const climvars = Dict(
     :bio1  => "mean annual air temperature",
     :bio2  => "mean diurnal air temperature range",

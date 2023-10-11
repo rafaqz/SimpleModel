@@ -154,6 +154,10 @@ savefig("figures/richness_on_empirical_ellipses.png")
 Plots.heatmap(do_map(elpoint, env.mask), color = cgrad(:Spectral, rev = true))
 savefig("figures/richness_on_random_ellipses.png")
 
+
+###--- Let's create some random ranges and look at the patterns
+# first with the spread model
+
 model_ranges = RasterSeries([make_continuous_range(el, env) for el in emp_ellipses], (; name = spec.names))
 newdiv = reduce(+, model_ranges)
 Plots.heatmap(newdiv, color = cgrad(:Spectral, rev = true))
