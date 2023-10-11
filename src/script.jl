@@ -107,7 +107,7 @@ p = Plots.plot([
 savefig(p, "figures/16 species controlling for point density.png")
 
 # fit elliptical niches for all species
-emp_ellipses = [fitellipse(name, spec, env, 2) for name in spec.names]
+emp_ellipses = [fitellipse(name, spec, env, 1.5) for name in spec.names]
 
 # show patterns of ellipse area
 ares = GeometryBasics.area.(emp_ellipses)
@@ -158,10 +158,21 @@ savefig("figures/richness_on_random_ellipses.png")
 ###--- Let's create some random ranges and look at the patterns
 # first with the spread model
 
+# Let's look at a random ellipse just to know what is going on
+plot_ellipse_patches(rand(eachindex(emp_ellipses)), spec, env, 1.5)
+
+# range patches based on the empirical ellipses
 model_ranges = RasterSeries([make_continuous_range(el, env) for el in emp_ellipses], (; name = spec.names))
 newdiv = reduce(+, model_ranges)
 Plots.heatmap(newdiv, color = cgrad(:Spectral, rev = true))
 savefig("figures/richness from patches in empirical ellipses.png")
+
+# range patches based on randomly placed ellipses (with the right size)
+rand_model_ranges = RasterSeries([make_continuous_range(el, env) for el in rand_ellipses], (; name = spec.names))
+rand_div = reduce(+, rand_model_ranges)
+Plots.heatmap(rand_div, color = cgrad(:Spectral, rev = true))
+savefig("figures/richness from patches in random ellipses.png")
+
 
 # Find and plot richnes at the 1 degree lat/long scale
 model_coarse = reduce(+, Rasters.aggregate.(any, model_ranges, 6))
@@ -173,3 +184,19 @@ Plots.plot(
     Plots.heatmap(emp_coarse, title = "empirical 1 degree richness"), size = (900, 500)
 )
 savefig("figures/coarse richness.png")
+
+
+
+# compare the range sizes of empirical ranges and those from ellipses
+rand_emp_rangesize = vec(count.(model_ranges))
+Plots.scatter(rangesizes, rand_emp_rangesize)
+Plots.plot!(identity, 0, 6e4, color = :black, lw = 2)
+
+
+# what's the relationship between ellipse size and actual range?
+
+emp_els_area = GeometryBasics.area.(emp_ellipses)
+Plots.scatter(rangesizes, emp_els_area)
+
+
+Plots.default()
