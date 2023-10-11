@@ -52,26 +52,3 @@ end
 
 
 
-model_ranges = RasterSeries([make_continuous_range(el, env) for el in emp_ellipses], (; name = spec.names))
-newdiv = reduce(+, model_ranges)
-Plots.heatmap(newdiv, color = cgrad(:Spectral, rev = true))
-savefig("figures/richness from patches in empirical ellipses.png")
-
-
-model_coarse = reduce(+, Rasters.aggregate.(any, model_ranges, 6))
-emp_coarse = reduce(+, Rasters.aggregate.(any, spec.ranges, 6))
-
-Plots.default(fillcolor = cgrad(:Spectral, rev = true))
-Plots.plot(
-    Plots.heatmap(model_coarse, title = "modelled 1 degree richness"),
-    Plots.heatmap(emp_coarse, title = "empirical 1 degree richness"), size = (900, 500)
-)
-savefig("figures/coarse richness.png")
-
-
-
-myel = rand(els)
-Plots.plot(
-    Plots.plot(map_ellipse(mye, env)),
-    Plots.plot(make_continuous_range(myel, env))
-)
