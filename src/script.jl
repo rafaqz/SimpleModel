@@ -204,3 +204,26 @@ Plots.scatter(rangesizes, emp_els_area)
 
 
 Plots.default()
+
+
+function occup_in_ellipse(el::Ellipse, env::Environment, sp::Raster{Bool})
+    ins, outs = 0, 0
+    for i in eachindex(env.pca1)
+        if in_ellipse((env.pca1[i], env.pca2[i]), el)
+            if sp[env.mask][i]
+                ins += 1
+            else
+                outs += 1
+            end
+        end
+    end
+    ins, outs
+end
+
+allins, allouts = Int[], Int[]
+for ind in eachindex(emp_ellipses)
+    ins, outs = occup_in_ellipse(emp_ellipses[ind], env, spec.ranges[ind])
+    push!(allins, ins)
+    push!(allouts, outs)
+end
+
