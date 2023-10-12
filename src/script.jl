@@ -227,6 +227,23 @@ for ind in eachindex(emp_ellipses)
     push!(allouts, outs)
 end
 
+Plots.scatter(log10.(GeometryBasics.area.(emp_ellipses) .+ 0.1), allins ./ (allins .+ allouts))
+Plots.scatter(log10.(rangesizes .+ 1), log10.(allins ./ (allins .+ allouts)))
+# it appears that rangesize is largely determined by how much of yuor niche you occupy
+# or - niches are consistently overestimated (possibly more likely)
+# some of the small-ranged species really occur in lots of regions - why is that?
+
+
+Plots.scatter(log10.(GeometryBasics.area.(emp_ellipses) .+ 0.1), log10.(rangesizes))
+# larger ranges have larger ellipses but not really that strong - I believe small ellipses are exaggerated
+
+wd = findall(>(100), allins ./ allouts)
+rangesizes[wd] # the second, number 103, is almost completely occupied. Let me take a look
+plot_ellipse_patches(103, spec, env)
+plot_ellipse_patches(3606, spec, env) # The Amazonian species tend to fully occupy their ellipse
+
+
+
 # Inspect the climate types in South America more closely
 # start with big_mat from prepare_environment
 mod = fit(PCA, big_mat; maxoutdim=3)
