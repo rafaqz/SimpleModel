@@ -227,3 +227,19 @@ for ind in eachindex(emp_ellipses)
     push!(allouts, outs)
 end
 
+# Inspect the climate types in South America more closely
+# start with big_mat from prepare_environment
+mod = fit(PCA, big_mat; maxoutdim=3)
+pr = MultivariateStats.transform(mod, big_mat)
+pr2 = pr' * vmax(loadings(mod))
+load = loadings(mod) * vmax(loadings(mod))
+
+biplot(pr2[:,1], pr2[:,2], load[:,1:2])
+cols = [RGB(sl...) for sl in eachrow(pr2)]
+Plots.scatter(env.inds, color = cols, msw = 0, ms = 1.7, aspect_ratio = 1, yflip = 
+true, size = (800, 1100), legend = false)
+savefig("figures/climate_colors.png")
+
+
+
+
