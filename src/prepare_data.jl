@@ -70,9 +70,9 @@ function do_pca(bioclim_sa, sa_mask)
 
     model = fit(PCA, big_mat; maxoutdim=2)
     pred = MultivariateStats.transform(model, big_mat)
-    pred2 = -(pred' * vmax(loadings(model))) # the minus here and below are just a transformation to have high values top right
+    pred2 = pred' * vmax(loadings(model)) # the minus here and below are just a transformation to have high values top right
 
-    pred2[:, 1], pred2[:, 2], -(loadings(model) * vmax(loadings(model)))
+    pred2[:, 1], pred2[:, 2], loadings(model) * vmax(loadings(model))
 end
 
 # Load the bird shapefiles and pick the ones in South America
@@ -114,6 +114,7 @@ function prepare_data(datadir; doplots = false)
     # and visualize
     doplots && Plots.plot(pca_maps)
     doplots && biplot(pca1, pca2, loads, string.(names(bioclim_sa)))
+    pca1 *= -1 # this is simply a hack to make it positive
 
     # Get the bird data (this takes time)
     sa_geoms = loadranges("Birds", 5, sa_mask, "/Users/cvg147/Library/CloudStorage/Dropbox/Arbejde/Data")
