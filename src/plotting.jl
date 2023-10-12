@@ -6,8 +6,29 @@ using GeoInterfaceRecipes
 
 
 # visualize a PCA biplot
+const climvars = Dict(
+    :bio1  => "mean annual air temperature",
+    :bio2  => "mean diurnal air temperature range",
+    :bio3  => "isothermality",
+    :bio4  => "temperature seasonality",
+    :bio5  => "mean daily maximum air temperature of the warmest month",
+    :bio6  => "mean daily minimum air temperature of the coldest month",
+    :bio7  => "annual range of air temperature",
+    :bio8  => "mean daily mean air temperatures of the wettest quarter",
+    :bio9  => "mean daily mean air temperatures of the driest quarter",
+    :bio10  => "mean daily mean air temperatures of the warmest quarter",
+    :bio11  => "mean daily mean air temperatures of the coldest quarter",
+    :bio12  => "annual precipitation amount",
+    :bio13  => "precipitation amount of the wettest month",
+    :bio14  => "precipitation amount of the driest month",
+    :bio15  => "precipitation seasonality",
+    :bio16  => "mean monthly precipitation amount of the wettest quarter",
+    :bio17  => "mean monthly precipitation amount of the driest quarter",
+    :bio18  => "mean monthly precipitation amount of the warmest quarter",
+    :bio19  => "mean monthly precipitation amount of the coldest quarter"
+)
 
-function biplot(pca1, pca2, loadings, labels = [""])
+function biplot(pca1, pca2, loadings, labels = string.(keys(climvars)))
     p = GLMakie.scatter(collect(zip(pca1, pca2)); color=(:grey, 0.5))
     for i in 1:19
         GLMakie.lines!([(0,0), 5 .* (loadings[i,:]...,)], color = :red)
@@ -92,24 +113,3 @@ function plot_ellipse_patches(myel::Int, spec::Species, env::Environment, elsize
     )
 end
 
-const climvars = Dict(
-    :bio1  => "mean annual air temperature",
-    :bio2  => "mean diurnal air temperature range",
-    :bio3  => "isothermality",
-    :bio4  => "temperature seasonality",
-    :bio5  => "mean daily maximum air temperature of the warmest month",
-    :bio6  => "mean daily minimum air temperature of the coldest month",
-    :bio7  => "annual range of air temperature",
-    :bio8  => "mean daily mean air temperatures of the wettest quarter",
-    :bio9  => "mean daily mean air temperatures of the driest quarter",
-    :bio10  => "mean daily mean air temperatures of the warmest quarter",
-    :bio11  => "mean daily mean air temperatures of the coldest quarter",
-    :bio12  => "annual precipitation amount",
-    :bio13  => "precipitation amount of the wettest month",
-    :bio14  => "precipitation amount of the driest month",
-    :bio15  => "precipitation seasonality",
-    :bio16  => "mean monthly precipitation amount of the wettest quarter",
-    :bio17  => "mean monthly precipitation amount of the driest quarter",
-    :bio18  => "mean monthly precipitation amount of the warmest quarter",
-    :bio19  => "mean monthly precipitation amount of the coldest quarter"
-)
