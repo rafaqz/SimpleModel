@@ -57,7 +57,7 @@ function prepare_environment(datadir)
     # Use WorldClim for now for speed
     bioclim = RasterStack(CHELSA{BioClim}; lazy=true)
     bioclim_sa = bioclim[X=-89 .. -33, Y=-57 .. 13]
-    Rasters.aggregate(mean, replace_missing(bioclim_sa, NaN), 10)
+    Rasters.aggregate(mean, replace_missing(bioclim_sa, NaN), 20)
 end
 
 # Fit a PCA model to the climate and extract the two primary components
@@ -70,9 +70,10 @@ function do_pca(bioclim_sa, sa_mask)
 
     model = fit(PCA, big_mat; maxoutdim=2)
     pred = MultivariateStats.transform(model, big_mat)
-    pred2 = pred' * vmax(loadings(model)) # the minus here and below are just a transformation to have high values top right
+    vm = vmax(loadings(model))
+    pred2 = pred' * vm # the minus here and below are just a transformation to have high values top right
 
-    -pred2[:, 1], -pred2[:, 2], -(loadings(model) * vmax(loadings(model)))
+    -pred2[:, 1], -pred2[:, 2], -(loadings(model) * vm)
 end
 
 # Load the bird shapefiles and pick the ones in South America
