@@ -31,7 +31,7 @@ env = obj[:env]
 # Count total diversity
 diversity = reduce(+, spec.ranges)
 Plots.heatmap(diversity, color = cgrad(:Spectral, rev = true))
-savefigures && savefig("figures/empirical_richness.png")
+save_figures && savefig("figures/empirical_richness.png")
 
 
 # Plot the diversity in climate space
@@ -163,7 +163,7 @@ save_figures && savefig("figures/richness_on_random_ellipses.png")
 # first with the spread model
 
 # Let's look at a random ellipse just to know what is going on
-plot_ellipse_patches(rand(eachindex(emp_ellipses)), spec, env, 1.5)
+plot_ellipse_patches(rand(eachindex(emp_ellipses)), spec, env, 1)
 
 # range patches based on the empirical ellipses
 model_ranges = RasterSeries([make_continuous_range(el, env) for el in emp_ellipses], (; name = spec.names))
@@ -179,8 +179,8 @@ save_figures && savefig("figures/richness from patches in random ellipses.png")
 
 
 # Find and plot richnes at the 1 degree lat/long scale
-model_coarse = reduce(+, Rasters.aggregate.(any, model_ranges, 6))
-emp_coarse = reduce(+, Rasters.aggregate.(any, spec.ranges, 6))
+model_coarse = reduce(+, Rasters.aggregate.(any, model_ranges, 12))
+emp_coarse = reduce(+, Rasters.aggregate.(any, spec.ranges, 12))
 
 Plots.default(fillcolor = cgrad(:Spectral, rev = true))
 Plots.plot(
