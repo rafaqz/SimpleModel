@@ -14,8 +14,8 @@ save_figures = false
 ###--- First we load all the data into two objects. This takes a while if first time, 
 # so we use JLSO to cache
 
-#datadir = "/Users/cvg147/Library/CloudStorage/Dropbox/Arbejde/Data"
-datadir = "C:\\Users\\cvg147\\Dropbox\\Arbejde\\Data"
+datadir = "/Users/cvg147/Library/CloudStorage/Dropbox/Arbejde/Data"
+#datadir = "C:\\Users\\cvg147\\Dropbox\\Arbejde\\Data"
 obj = try
     JLSO.load(joinpath(datadir, "processed_objects.jls"))
 catch
@@ -252,10 +252,14 @@ pr2 = pr' * vmax(loadings(mod))
 load = loadings(mod) * vmax(loadings(mod))
 
 biplot(pr2[:,1], pr2[:,2], load[:,1:2])
-cols = [RGB(sl...) for sl in eachrow(pr2)]
-Plots.scatter(env.inds, color = cols, msw = 0, ms = 1.7, aspect_ratio = 1, yflip = 
+
+ct = pr2 .- minimum(pr2, dims = 1)
+ct ./= maximum(ct)
+ct .+= 0.5 .* (1 .- maximum(ct, dims = 1))
+cols = [RGB(sl...) for sl in eachrow(ct)]
+Plots.scatter(env.inds, color = cols, msw = 0, ms = 2, aspect_ratio = 1, yflip = 
 true, size = (800, 1100), legend = false)
-savefig("figures/climate_colors.png")
+savefig("figures/climate_colors2.png")
 
 
 
