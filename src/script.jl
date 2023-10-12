@@ -7,8 +7,9 @@ include("objects.jl")
 include("plotting.jl")
 include("ellipse.jl")
 include("simplemodel.jl")
+include("spread.jl")
 
-save_figures = false
+save_figures = true
 
 ###--- First we load all the data into two objects. This takes a while if first time, 
 # so we use JLSO to cache
