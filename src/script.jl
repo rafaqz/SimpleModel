@@ -9,7 +9,7 @@ include("ellipse.jl")
 include("simplemodel.jl")
 include("spread.jl")
 
-save_figures = true
+save_figures = false
 
 ###--- First we load all the data into two objects. This takes a while if first time, 
 # so we use JLSO to cache
@@ -179,8 +179,8 @@ save_figures && savefig("figures/richness from patches in random ellipses.png")
 
 
 # Find and plot richnes at the 1 degree lat/long scale
-model_coarse = reduce(+, Rasters.aggregate.(any, model_ranges, 12))
-emp_coarse = reduce(+, Rasters.aggregate.(any, spec.ranges, 12))
+model_coarse = reduce(+, Rasters.aggregate.(any, model_ranges, 6))
+emp_coarse = reduce(+, Rasters.aggregate.(any, spec.ranges, 6))
 
 Plots.default(fillcolor = cgrad(:Spectral, rev = true))
 Plots.plot(
@@ -210,7 +210,7 @@ function occup_in_ellipse(el::Ellipse, env::Environment, sp::Raster{Bool})
     ins, outs = 0, 0
     for i in eachindex(env.pca1)
         if in_ellipse((env.pca1[i], env.pca2[i]), el)
-            if sp[env.mask][i]
+            if sp[env.inds[i]...]
                 ins += 1
             else
                 outs += 1
