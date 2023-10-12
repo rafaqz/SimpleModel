@@ -72,7 +72,7 @@ function do_pca(bioclim_sa, sa_mask)
     pred = MultivariateStats.transform(model, big_mat)
     pred2 = pred' * vmax(loadings(model)) # the minus here and below are just a transformation to have high values top right
 
-    pred2[:, 1], pred2[:, 2], loadings(model) * vmax(loadings(model))
+    -pred2[:, 1], -pred2[:, 2], -(loadings(model) * vmax(loadings(model)))
 end
 
 # Load the bird shapefiles and pick the ones in South America
@@ -108,7 +108,6 @@ function prepare_data(datadir; doplots = false)
     ## get the PCA
     pca1, pca2, loads = do_pca(bioclim_sa, sa_mask)
     doplots && biplot(pca1, pca2, loads, string.(names(bioclim_sa)))
-    pca1 *= -1 # this is simply a hack to make it positive
 
     # and convert the results to raster
     pca_maps = RasterStack((pca1=do_map(pca1, sa_mask), pca2=do_map(pca2, sa_mask)))
