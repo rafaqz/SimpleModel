@@ -14,13 +14,15 @@ save_figures = true
 ###--- First we load all the data into two objects. This takes a while if first time, 
 # so we use JLSO to cache
 
-datadir = "/Users/cvg147/Library/CloudStorage/Dropbox/Arbejde/Data"
+#datadir = "/Users/cvg147/Library/CloudStorage/Dropbox/Arbejde/Data"
+datadir = "C:\\Users\\cvg147\\Dropbox\\Arbejde\\Data"
 obj = try
     JLSO.load(joinpath(datadir, "processed_objects.jls"))
 catch
     include("prepare_data.jl")
     obj = prepare_data(datadir)
 end
+
 spec = obj[:spec] # see the "objects.jl" file for an explanation of these two objects
 env = obj[:env]
 
@@ -29,7 +31,7 @@ env = obj[:env]
 # Count total diversity
 diversity = reduce(+, spec.ranges)
 Plots.heatmap(diversity, color = cgrad(:Spectral, rev = true))
-savefig("figures/empirical_richness.png")
+savefigures && savefig("figures/empirical_richness.png")
 
 
 # Plot the diversity in climate space

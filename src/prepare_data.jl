@@ -107,17 +107,18 @@ function prepare_data(datadir; doplots = false)
 
     ## get the PCA
     pca1, pca2, loads = do_pca(bioclim_sa, sa_mask)
+    doplots && biplot(pca1, pca2, loads, string.(names(bioclim_sa)))
+    pca1 *= -1 # this is simply a hack to make it positive
 
     # and convert the results to raster
     pca_maps = RasterStack((pca1=do_map(pca1, sa_mask), pca2=do_map(pca2, sa_mask)))
 
     # and visualize
     doplots && Plots.plot(pca_maps)
-    doplots && biplot(pca1, pca2, loads, string.(names(bioclim_sa)))
-    pca1 *= -1 # this is simply a hack to make it positive
+
 
     # Get the bird data (this takes time)
-    sa_geoms = loadranges("Birds", 5, sa_mask, "/Users/cvg147/Library/CloudStorage/Dropbox/Arbejde/Data")
+    sa_geoms = loadranges("Birds", 5, sa_mask, datadir)
     # names of all species
     allspecies = unique(sa_geoms.sci_name)
     allranges = RasterSeries([get_speciesmask(name, sa_geoms, sa_mask) for name in allspecies], (; name = allspecies))

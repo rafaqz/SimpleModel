@@ -1,5 +1,6 @@
 using Plots
 using GLMakie
+using StatsBase
 using GeoInterfaceMakie
 using GeoInterfaceRecipes
 
