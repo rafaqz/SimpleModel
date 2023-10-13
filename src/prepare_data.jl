@@ -8,6 +8,7 @@ using Extents
 using Shapefile
 using ConcaveHull
 using StatsBase
+using LinearAlgebra
 
 include("objects.jl")
 include("plotting.jl")
@@ -61,19 +62,19 @@ function prepare_environment(datadir)
 end
 
 # Fit a PCA model to the climate and extract the two primary components
-function do_pca(bioclim_sa, sa_mask)
+function do_pca(bioclim_sa, sa_mask; naxes = 2)
     # logged = RasterStack(Tuple(map(x -> x[1] > 11 ? log.(x[2]) : x[2], enumerate(values(replace_missing(bioclim_sa))))))
     big_mat = reduce(vcat, map(enumerate(bioclim_sa)) do (i, A)
         permutedims(zscore(i > 11 ? log.(A[sa_mask] .+ 1) : A[sa_mask]))
     end)
     # histogram(big_mat'; bins=20, ticks=false, label=false, title=(1:19)')
 
-    model = fit(PCA, big_mat; maxoutdim=2)
+    model = fit(PCA, big_mat; maxoutdim = naxes)
     pred = MultivariateStats.transform(model, big_mat)
     vm = vmax(loadings(model))
     pred2 = pred' * vm # the minus here and below are just a transformation to have high values top right
 
-    -pred2[:, 1], -pred2[:, 2], -(loadings(model) * vm)
+    -permutedims(pred2), -(loadings(model) * vm)
 end
 
 # Load the bird shapefiles and pick the ones in South America
@@ -107,7 +108,8 @@ function prepare_data(datadir; doplots = false)
     doplots && Plots.plot(bioclim_sa.bio1)
 
     ## get the PCA
-    pca1, pca2, loads = do_pca(bioclim_sa, sa_mask)
+    pcamat, loads = do_pca(bioclim_sa, sa_mask)
+    pca1, pca2 = pcamat[:,1], pcamat[:,2]
     doplots && biplot(pca1, pca2, loads, string.(names(bioclim_sa)))
 
     # and convert the results to raster

@@ -12,9 +12,10 @@ include("spread.jl")
 save_figures = false
 
 ###--- First we load all the data into two objects. This takes a while if first time, 
-# so we use JLSO to cache
+# so we us
 
-datadir = "/Users/cvg147/Library/CloudStorage/Dropbox/Arbejde/Data"
+datadir = "/Users/Michael/Library/CloudStorage/Dropbox/Arbejde/Data"
+#datadir = "/Users/cvg147/Library/CloudStorage/Dropbox/Arbejde/Data"
 #datadir = "C:\\Users\\cvg147\\Dropbox\\Arbejde\\Data"
 obj = try
     JLSO.load(joinpath(datadir, "processed_objects.jls"))
@@ -246,19 +247,25 @@ plot_ellipse_patches(3606, spec, env) # The Amazonian species tend to fully occu
 
 # Inspect the climate types in South America more closely
 # start with big_mat from prepare_environment
-mod = fit(PCA, big_mat; maxoutdim=3)
-pr = MultivariateStats.transform(mod, big_mat)
-pr2 = pr' * vmax(loadings(mod))
-load = loadings(mod) * vmax(loadings(mod))
+
+include("prepare_data.jl")
+bioclim_sa = prepare_environment(datadir)
+sa_mask = boolmask(bioclim_sa.bio15)
+pr2, load = do_pca(bioclim_sa,sa_mask; naxes = 3)
 
 biplot(pr2[:,1], pr2[:,2], load[:,1:2])
 
 ct = pr2 .- minimum(pr2, dims = 1)
 ct ./= maximum(ct)
 ct .+= 0.5 .* (1 .- maximum(ct, dims = 1))
-cols = [RGB(sl...) for sl in eachrow(ct)]
+
+ct = pr2
+cols = [RGB(sl'...) for sl in eachcol(ct)]
 Plots.scatter(env.inds, color = cols, msw = 0, ms = 2, aspect_ratio = 1, yflip = 
 true, size = (800, 1100), legend = false)
+
+Plots.scatter(env.pca1, env.pca2, color = cols, msw = 0, ms = 1, aspect_ratio = 1, size = (600, 600), legend = false)
+
 savefig("figures/climate_colors2.png")
 
 
