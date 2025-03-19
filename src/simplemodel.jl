@@ -17,7 +17,7 @@ end
 
 do_map(x, env::Environment) = do_map(x, env.mask)
 
-get_climate(speciesmask::Raster, env::Environment) = (first(env.pca_maps)[speciesmask], last(env.pca_maps)[speciesmask])
+get_climate(speciesmask::Raster, env::Environment) = (env.pca_maps[:pca1][speciesmask], env.pca_maps[:pca2][speciesmask])
 get_climate(species::String, spec::Species, env::Environment) = get_climate(spec.ranges[At(species)], env)
 
 function points_to_geo(xs, ys)

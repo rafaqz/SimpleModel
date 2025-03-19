@@ -45,36 +45,23 @@ function vmax(A::AbstractMatrix{TA}; gamma = 1.0, minit = 20, maxit = 1000,
     return T
 end
 
+# Download the bioclim variables for south america
 function prepare_environment(datadir)
     ENV["RASTERDATASOURCES_PATH"] = joinpath(datadir, "Rasterdatasources")
-    # datadir = "/home/raf/Data/Biodiversity/Distributions"
-
-    # download the bioclim variables for south america
-
-    # bioclim = RasterStack(CHELSA{BioClim}; lazy=true)
-    # bioclim_sa = bioclim[X=-89 .. -33, Y=-57 .. 13]
-    # bioclim_sa = Rasters.aggregate(mean, replace_missing(bioclim_sa, NaN), 10)
-
-    # Use WorldClim for now for speed
-    bioclim = RasterStack(CHELSA{BioClim}; lazy=true)
+    bioclim = RasterStack(CHELSA{BioClim}; lazy=true, version = 1)
     bioclim_sa = bioclim[X=-89 .. -33, Y=-57 .. 13]
     Rasters.aggregate(mean, replace_missing(bioclim_sa, NaN), 20)
 end
 
 # Fit a PCA model to the climate and extract the two primary components
 function do_pca(bioclim_sa, sa_mask; naxes = 2)
-    # logged = RasterStack(Tuple(map(x -> x[1] > 11 ? log.(x[2]) : x[2], enumerate(values(replace_missing(bioclim_sa))))))
-    big_mat = reduce(vcat, map(enumerate(bioclim_sa)) do (i, A)
-        permutedims(zscore(i > 11 ? log.(A[sa_mask] .+ 1) : A[sa_mask]))
-    end)
+    big_mat = permutedims(reduce(hcat, maplayers(A->zscore(A[sa_mask]), bioclim_sa)))
     # histogram(big_mat'; bins=20, ticks=false, label=false, title=(1:19)')
-
     model = fit(PCA, big_mat; maxoutdim = naxes)
     pred = MultivariateStats.transform(model, big_mat)
     vm = vmax(loadings(model))
     pred2 = pred' * vm # the minus here and below are just a transformation to have high values top right
-
-    -permutedims(pred2), -(loadings(model) * vm)
+    -pred2, -(loadings(model) * vm)
 end
 
 # Load the bird shapefiles and pick the ones in South America
@@ -107,6 +94,12 @@ function prepare_data(datadir; doplots = false)
     # and visualize
     doplots && Plots.plot(bioclim_sa.bio1)
 
+    # log transform the precipitation layers
+    for prec in 12:19
+        lay = Symbol("bio$prec")
+        bioclim_sa[lay][sa_mask] .= log.(bioclim_sa[lay][sa_mask] .+ 1)
+    end  
+
     ## get the PCA
     pcamat, loads = do_pca(bioclim_sa, sa_mask)
     pca1, pca2 = pcamat[:,1], pcamat[:,2]
@@ -118,11 +111,10 @@ function prepare_data(datadir; doplots = false)
     # and visualize
     doplots && Plots.plot(pca_maps)
 
-
     # Get the bird data (this takes time)
     sa_geoms = loadranges("Birds", 5, sa_mask, datadir)
     # names of all species
-    allspecies = unique(sa_geoms.sci_name)
+    allspecies = collect(skipmissing(unique(sa_geoms.sci_name)))
     allranges = RasterSeries([get_speciesmask(name, sa_geoms, sa_mask) for name in allspecies], (; name = allspecies))
     inds = collect(Iterators.product(1:size(sa_mask, 1), 1:size(sa_mask, 2)))[sa_mask]
     

@@ -14,14 +14,14 @@ save_figures = false
 ###--- First we load all the data into two objects. This takes a while if first time, 
 # so we us
 
-datadir = "/Users/Michael/Library/CloudStorage/Dropbox/Arbejde/Data"
-#datadir = "/Users/cvg147/Library/CloudStorage/Dropbox/Arbejde/Data"
+#datadir = "/Users/Michael/Library/CloudStorage/Dropbox/Arbejde/Data"
+datadir = "/Users/cvg147/Library/CloudStorage/Dropbox/Arbejde/Data"
 #datadir = "C:\\Users\\cvg147\\Dropbox\\Arbejde\\Data"
 obj = try
     JLSO.load(joinpath(datadir, "processed_objects.jls"))
 catch
     include("prepare_data.jl")
-    obj = prepare_data(datadir)
+    obj = prepare_data(datadir, doplots = true)
 end
 
 spec = obj[:spec] # see the "objects.jl" file for an explanation of these two objects
@@ -37,7 +37,7 @@ save_figures && savefig("figures/empirical_richness.png")
 
 # Plot the diversity in climate space
 f = Figure()
-a, s = Makie.scatter(f[1,1], collect(zip(env.pca1, env.pca2)); markersize = 0.1, color = diversity[env.mask], colormap = cgrad(:Spectral, rev = true))
+a, s = GLMakie.scatter(f[1,1], collect(zip(env.pca1, env.pca2)); markersize = 0.1, color = diversity[env.mask], colormap = cgrad(:Spectral, rev = true))
 Colorbar(f[1,2],s)
 display(f)
 
